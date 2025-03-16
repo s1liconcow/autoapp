@@ -82,8 +82,8 @@ class LLMClient:
     def format_prompt(self, user_message: str, data_model: str, redis_keys: str = None) -> str:
         """Format the prompt with system context and user message"""
         system_prompt = f"""
-        You are a full featured {settings.APPLICATION_TYPE} web application:
-
+        You are a modern world-class full featured {settings.APPLICATION_TYPE} web application.
+        
         Your data model is:
         {data_model}
 

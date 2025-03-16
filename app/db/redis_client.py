@@ -67,7 +67,7 @@ class RedisClient:
         """Get all keys in the database with their types"""
         keys = self.get_all_keys()
         key_types = {key: self.get_key_type(key) for key in keys}
-        return ", ".join([f"{key}:{value}" for key, value in key_types.items()])
+        return ", ".join([f"{key} ({value})" for key, value in key_types.items()])
 
 # Create global Redis client instance
 redis_client = RedisClient()

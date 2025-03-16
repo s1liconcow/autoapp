@@ -4,7 +4,7 @@ from typing import Optional
 class Settings:
     # Application Settings
     DEV_MODE: bool = os.getenv("DEV_MODE", "true").lower() == "true"
-    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "TODO application")
+    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "TODO")
     APPLICATION_TITLE: str = f"AI Powered {APPLICATION_TYPE}"
     APPLICATION_DESCRIPTION: str = os.getenv("APPLICATION_DESCRIPTION", f"A world-class enterprise-grade {APPLICATION_TYPE}")
 
@@ -13,9 +13,9 @@ class Settings:
 
     # Prompts
     INIT_PROMPT_TEMPLATE: str = """
-    We are building a web application.
+    We are building a full-featured, modern, AI-enabled web {application_type} application.
 
-    First suggest a data model for a world-class full-featured {application_type} application.  This will be passed to future LLM calls so they can understand the schema.
+    First suggest a data model, this will be passed to future LLM calls so they can understand the schema.
     A sample data model for a 'reddit' application could be:
       This application includes users, subreddits, posts and comments.
       Users have a user_id (string), username (string), email (string), password_hash (string), creation_date (integer - unix timestamp), karma (integer), about (string), and profile_pic_url (string).
@@ -23,27 +23,21 @@ class Settings:
       Posts have a post_id (string), title (string), author_id (string - which references the user), subreddit_id (string - which references the subreddit), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer), num_comments (integer), flair (string), and url (string).
       Comments have a comment_id (string), post_id (string - which references the post), author_id (string - which references the user), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer) and an optional parent_comment_id (string).
       All entities are stored as hashes with keys named entitytype:entityid (e.g. post:1, user:1, subreddit:1, comment:1).
-      Sorted sets are used to store entities by timestamp. sets are used for indexing by entity status (new). Sets are also used for indexing posts by subreddit (idx:subreddit:subreddit_id).
+      Sorted sets are used to store entities by timestamp. 
+      Sets are used for indexing by entity status (e.g, new).
+      Sets are also used for indexing posts by subreddit (e.g, idx:subreddit:subreddit_id).
      
     
-    Save the data model as text to the redis key '{data_model_key}'.   
+    Save the data model as string to the redis key '{data_model_key}'.   
     
-    Also generate sample data for an {application_type} app using standard Redis data primitives.
+    Also generate sample data for an {application_type} app using the Redis data primitives.
 
-    For Sample Data Use
-    1. Hash for each entity's data:
-       - Key pattern: entity:$id
-       - Fields match data model
-    2. Sorted Set for entities by creation date
-    3. Sets for entity status tracking
-    5. Sets for indexing
-
-    Create at least 5 sample entities with realistic data using these data structures.
+    Create at least 5 sample entities with realistic data using standard Redis data structures to store and index the data.
 
     Example response format:
     {{
         "redis_commands": [
-            {{"command": "HSET", "args": ["data_model", "field1", "type1", "field2", "type2"]}},
+            {{"command": "SET", "args": ["data_model", "generated data model"]}},
             {{"command": "HMSET", "args": ["entity:1", "field1", "value1", "field2", "value2"]}},
             {{"command": "ZADD", "args": ["entities:by_date", "1709347200", "entity:1"]}},
             {{"command": "SADD", "args": ["status:new", "entity:1"]}},
@@ -78,7 +72,7 @@ class Settings:
     """
 
     RESPONSE_PROMPT: str = """
-    You are a world class web application, you can query redis and render a Jinja template for the user.
+    You can query redis and render a Jinja template for the user.
 
     * You should provide a beautiful and engaging user experience to the user.
     * You can create links to other pages that make sense for your type of application.
@@ -86,16 +80,32 @@ class Settings:
         For example "redis_results['status:new']" for the command below.
     * Your jinja template additionally has access to the redis python client as 'redis'.
     * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
+    * You are not a toy example.  You should be the best application of this kind on the internet.
     * You don't need to decode strings as UTF-8
 
     Example response:
-    {{
+    {
         "redis_commands": [
-            {{"command": "SMEMBERS", "args": ["status:new"]}},
-            {{"command": "LRANGE", "args": ["entity_ids", "0", "-1"]}},
+            {"command": "SMEMBERS", "args": ["status:new"]},
+            {"command": "LRANGE", "args": ["entity_ids", "0", "-1"]},
         ],
-        "template": "A jinja template that renders a response to the user"
-    }}
+        "template": "
+    <h1>New Entities</h1>
+    <ul>
+    {% for entity_id in redis_results['status:new'] %}
+        {% set entity = redis.hgetall(entity_id) %}
+        <li><a href="/entity/{{ entity_id.split(':')[1] }}">{{ entity.title }}</a></li>
+    {% endfor %}
+    </ul>
+
+    <h1>All Entity IDs</h1>
+    <ol>
+    {% for entity_id in redis_results['entity_ids'] %}
+        <li>{{ entity_id.split(':')[1] }}</li>
+    {% endfor %}
+    </ol>
+    "
+    }
     """
 
     # LLM Settings
