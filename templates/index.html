@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto AI Application</title>
+    <!-- Add Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-5">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <!-- Add navigation buttons -->
+            <div class="flex gap-2 mb-4">
+                <button onclick="navigateHistory(-1)" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    id="backBtn" disabled>
+                    ← Back
+                </button>
+                <button onclick="navigateHistory(1)" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    id="forwardBtn" disabled>
+                    Forward →
+                </button>
+            </div>
+            <div class="flex justify-between items-center bg-gray-100 rounded p-3 mb-4" id="current-path">
+                <span class="path-text font-mono"></span>
+                <span class="text-blue-600 italic animate-pulse hidden loading-indicator">Loading...</span>
+            </div>
+            <div id="notification" class="hidden rounded p-3 mb-4"></div>
+            <div id="rendered-content" class="mt-4"></div>
+            <div id="content-status" class="text-gray-600 italic mt-3"></div>
+        </div>
+    </div>
+
+    <script>
+        // Add history management
+        let historyStack = [];
+        let currentIndex = -1;
+
+        function updateNavigationButtons() {
+            document.getElementById('backBtn').disabled = currentIndex <= 0;
+            document.getElementById('forwardBtn').disabled = currentIndex >= historyStack.length - 1;
+        }
+
+        function navigateHistory(direction) {
+            currentIndex += direction;
+            const historyEntry = historyStack[currentIndex];
+            if (historyEntry) {
+                sendRequest(historyEntry.method, historyEntry.path, historyEntry.data, false);
+                updateNavigationButtons();
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        async function sendRequest(method, path, data = null, addToHistory = true) {
+            const contentDiv = document.getElementById('rendered-content');
+            const statusDiv = document.getElementById('content-status');
+            const pathDiv = document.getElementById('current-path');
+            const pathText = pathDiv.querySelector('.path-text');
+
+            // Add to history if needed
+            if (addToHistory) {
+                // Remove any forward history when new navigation occurs
+                historyStack = historyStack.slice(0, currentIndex + 1);
+                historyStack.push({ method, path, data });
+                currentIndex = historyStack.length - 1;
+                updateNavigationButtons();
+            }
+
+            // Show loading state
+            pathDiv.classList.add('loading');
+            statusDiv.textContent = 'Loading...';
+            pathText.textContent = `${method} ${path}`;
+
+            let message = method + " " + path;
+            if (data) {
+                message = `${path}\n${JSON.stringify(data, null, 2)}`;
+            }
+
+            try {
+                const response = await fetch('/get_response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `message=${encodeURIComponent(message)}`
+                });
+
+                const htmlContent = await response.text();
+                contentDiv.innerHTML = htmlContent;
+                statusDiv.textContent = '';
+
+                // Set up event handlers for the new content
+                setupEventHandlers(contentDiv);
+            } catch (error) {
+                showNotification(error.message, 'error');
+                contentDiv.innerHTML = `<div class="error"><strong>Failed to load content:</strong><hr><pre>${error.message}</pre></div>`;
+            } finally {
+                // Hide loading state
+                pathDiv.classList.remove('loading');
+            }
+        }
+
+        function setupEventHandlers(container) {
+            // Handle clicks on links
+            container.addEventListener('click', async (e) => {
+                const link = e.target.closest('a');
+                if (link) {
+                    e.preventDefault();
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('http')) {
+                        await sendRequest('GET', href);
+                    }
+                }
+            });
+
+            // Handle form submissions
+            container.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const method = form.method.toUpperCase() || 'GET';
+                const action = form.action;
+
+                // Get form data
+                const formData = new FormData(form);
+                const formDataObj = {};
+                formData.forEach((value, key) => {
+                    formDataObj[key] = value;
+                });
+
+                if (method === 'GET') {
+                    const queryString = new URLSearchParams(formData).toString();
+                    await sendRequest(method, `${action}?${queryString}`);
+                } else {
+                    await sendRequest(method, action, formDataObj);
+                    showNotification('Operation completed successfully');
+                }
+            });
+
+            // Handle button clicks that might trigger actions
+            container.addEventListener('click', async (e) => {
+                const button = e.target.closest('button');
+                if (button && button.getAttribute('data-action')) {
+                    e.preventDefault();
+                    const action = button.getAttribute('data-action');
+                    const method = button.getAttribute('data-method') || 'GET';
+                    await sendRequest(method, action);
+                }
+            });
+        }
+
+        // Update initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            sendRequest('GET', '/', null, true);
+        });
+    </script>
+</body>
+
+</html>
