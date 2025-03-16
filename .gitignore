@@ -1,3 +1,5 @@
 .env
 aa/
 __pycache__/
+llm_interactions.log
+test.json

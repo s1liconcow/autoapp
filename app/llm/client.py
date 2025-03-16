@@ -65,7 +65,7 @@ class LLMClient:
             logger.error("LLM request failed: %s", str(e))
             raise
 
-    def format_prompt(self, user_message: str, data_model: str, redis_keys: str = None, http_method:str = None) -> str:
+    def format_prompt(self, user_message: str, data_model: str, redis_keys: str = None) -> str:
         """Format the prompt with system context and user message"""
         system_prompt = f"""
         You are a full featured {settings.APPLICATION_TYPE} web application:
@@ -81,7 +81,7 @@ class LLMClient:
         if redis_keys:
             system_prompt += "\nExisting Redis Keys:\n" + f"\n{redis_keys}"
 
-        return f"System: {system_prompt}\n\nUser Request: {http_method} {user_message}\n\nAssistant:"
+        return f"System: {system_prompt}\n\nUser Request:{user_message}\n\nAssistant:"
 
 # Create global LLM client instance
 llm_client = LLMClient()

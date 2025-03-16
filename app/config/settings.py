@@ -84,7 +84,8 @@ class Settings:
     * Any redis commands will be available in a 'redis_results' dictionary with the command's first arg as the key.
         For example "redis_results['status:new']" for the command below.
     * Your jinja template additionally has access to the redis python client as 'redis'.
-    * Tailwind CSS and DaisyUI are available.
+    * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
+    * You don't need to decode strings as UTF-8
 
     Example response:
     {{
