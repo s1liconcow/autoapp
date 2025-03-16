@@ -1,17 +1,15 @@
-# Ollama Web Interface
+# AI Auto Application
 
-A simple web interface for interacting with a local Ollama instance. This application allows you to:
-- Dynamically update the system prompt
-- Chat with your local Ollama models
-- See real-time responses in a modern interface
+What if instead of generating application code, the AI *was* the application.  
 
-## Prerequisites
+Here is the AI when told to be a TODO application:
 
-- Python 3.7+
-- A local Ollama instance running (default: http://localhost:11434)
-- The llama2 model installed in Ollama (or modify the code to use a different model)
+![TODO Application Sample Image 1](/images/sample1.png)
+![TODO Application Sample Image 2](/images/sample2.png)
 
 ## Setup
+
+0. Take a look at app/config/settings.py and configure your application.  Make sure redis is running locally.  
 
 1. Create a virtual environment (recommended):
 ```bash
@@ -26,22 +24,18 @@ pip install -r requirements.txt
 
 ## Running the Application
 
-1. Make sure your Ollama instance is running and accessible at http://localhost:11434
-
-2. Start the web application:
+1. Start the web application:
 ```bash
-python app.py
+source .env
+python -m app.main
 ```
 
-3. Open your browser and navigate to http://localhost:8000
+3. Open your browser and navigate to http://localhost:8000 (or the configured port)
 
 ## Usage
 
-- The left panel allows you to update the system prompt that will be used for all subsequent interactions
-- The right panel is your chat interface where you can send messages and see responses
-- Press Enter to send a message (Shift+Enter for new line)
-- The interface will show status messages for both prompt updates and chat interactions
+- The left panel allows you to update the system prompt or other configuration parameters that will be used for subsequent interactions.
 
 ## Note
 
-The application uses the llama2 model by default. To use a different model, modify the `model` parameter in the `/get_response` route in `app.py`. 
+- The application uses a default model. To use a different model, modify the configuration in the application. 
