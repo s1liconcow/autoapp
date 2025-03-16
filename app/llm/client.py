@@ -1,6 +1,7 @@
 from typing import Optional
 import requests
 from google import genai
+from google.genai import types
 from app.config.settings import settings
 from app.utils.logger import logger
 
@@ -13,57 +14,70 @@ class LLMClient:
 
     async def get_response(self, prompt: str) -> str:
         """Get response from configured LLM provider"""
-        try:
-            if settings.LLM_PROVIDER == "gemini":
-                response = self.client.models.generate_content(
-                    model=settings.GEMINI_MODEL,
-                    contents=prompt,
-                    config={
-                        "response_mime_type": "application/json"
+        if settings.LLM_PROVIDER == "gemini":
+            config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema={
+                        'properties': {
+                            'template': {'type': 'STRING'},
+                            'redis_commands': {
+                                'type': 'array',
+                                'items': {
+                                    'type': 'OBJECT',
+                                    'properties': {
+                                        'command': {'type': 'string'},
+                                        'args': {'type': 'array', 'items': {'type': 'string'}}
+                                    },
+                                    'required': ['command', 'args']
+                                }
+                            }
+                        },
+                        'type': 'OBJECT'
                     }
                 )
-                return response.text
-                
-            else:  # default to ollama
-                response = requests.post(
-                    f"{settings.OLLAMA_URL}/api/generate",
-                    json={
-                        "model": settings.OLLAMA_MODEL,
-                        "prompt": prompt,
-                        "stream": False,
-                        "format": {
-                            "type": "object",
-                            "properties": {
-                                "redis_commands": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "command": {"type": "string"},
-                                            "args": {
-                                                "type": "array",
-                                                "items": {"type": "string"}
-                                            }
-                                        },
-                                        "required": ["command", "args"]
-                                    }
-                                },
-                                "template": {
-                                    "type": "string",
+            response = self.client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config=config
+            )
+            return response.text
+            
+        else:  # default to ollama
+            response = requests.post(
+                f"{settings.OLLAMA_URL}/api/generate",
+                json={
+                    "model": settings.OLLAMA_MODEL,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": {
+                        "type": "object",
+                        "properties": {
+                            "redis_commands": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "command": {"type": "string"},
+                                        "args": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        }
+                                    },
+                                    "required": ["command", "args"]
                                 }
                             },
-                        }
+                            "template": {
+                                "type": "string",
+                            }
+                        },
                     }
-                )
-                
-                if response.status_code == 200:
-                    return response.json()["response"]
-                else:
-                    raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
-                    
-        except Exception as e:
-            logger.error("LLM request failed: %s", str(e))
-            raise
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()["response"]
+            else:
+                raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
 
     def format_prompt(self, user_message: str, data_model: str, redis_keys: str = None) -> str:
         """Format the prompt with system context and user message"""
