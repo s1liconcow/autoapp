@@ -55,7 +55,9 @@ class RedisClient:
 
     def get_all_keys(self) -> List[str]:
         """Get all keys in the database"""
-        return self.client.keys("*")
+        keys = self.client.keys("*")
+        keys.remove(settings.DATA_MODEL_KEY)
+        return keys
 
     def get_key_type(self, key: str) -> str:
         """Get the type of a key"""

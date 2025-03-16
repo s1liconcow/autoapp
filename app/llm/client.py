@@ -81,7 +81,7 @@ class LLMClient:
         if redis_keys:
             system_prompt += "\nExisting Redis Keys:\n" + f"\n{redis_keys}"
 
-        return f"System: {system_prompt}\n\nUser Request:{user_message}\n\nAssistant:"
+        return f"System: {system_prompt}\n\nUser Request: {user_message}\n\nAssistant:"
 
 # Create global LLM client instance
 llm_client = LLMClient()

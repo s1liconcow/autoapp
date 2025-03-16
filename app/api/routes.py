@@ -22,8 +22,8 @@ async def home(request: Request):
 async def get_response(message: str = Form(...)):
     try:
         # Get current Redis keys for context
-        redis_keys = redis_client.get_all_keys()
-        data_model = redis_client.client.smembers(settings.DATA_MODEL_KEY)
+        redis_keys = redis_client.get_all_keys_with_types()
+        data_model = redis_client.client.get(settings.DATA_MODEL_KEY)
         
         # Format prompt with system context and user message
         prompt = llm_client.format_prompt(

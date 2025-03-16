@@ -13,21 +13,22 @@ class Settings:
 
     # Prompts
     INIT_PROMPT_TEMPLATE: str = """
-    First suggest a data model for an {application_type}.
-    Then, generate sample data for an {application_type} using the following Redis schema and the suggested data model:
+    We are building a web application.
+
+    First suggest a data model for a world-class full-featured {application_type} application.  This will be passed to future LLM calls so they can understand the schema.
+    A sample data model for a 'reddit' application could be:
+      This application includes users, subreddits, posts and comments.
+      Users have a user_id (string), username (string), email (string), password_hash (string), creation_date (integer - unix timestamp), karma (integer), about (string), and profile_pic_url (string).
+      Subreddits have a subreddit_id (string), name (string), description (string), creation_date (integer - unix timestamp), num_members (integer) and an NSFW boolean.
+      Posts have a post_id (string), title (string), author_id (string - which references the user), subreddit_id (string - which references the subreddit), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer), num_comments (integer), flair (string), and url (string).
+      Comments have a comment_id (string), post_id (string - which references the post), author_id (string - which references the user), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer) and an optional parent_comment_id (string).
+      All entities are stored as hashes with keys named entitytype:entityid (e.g. post:1, user:1, subreddit:1, comment:1).
+      Sorted sets are used to store entities by timestamp. sets are used for indexing by entity status (new). Sets are also used for indexing posts by subreddit (idx:subreddit:subreddit_id).
+     
     
-    The data model should be stored in redis using SADD with the key '{data_model_key}'.
-    A sample data model for a 'twitter' application could be:
-    user_id
-    username
-    tweet_id
-    tweet_text
-    timestamp
-    likes
-    retweets
-    replies
-    hashtags
-    mentions
+    Save the data model as text to the redis key '{data_model_key}'.   
+    
+    Also generate sample data for an {application_type} app using standard Redis data primitives.
 
     For Sample Data Use
     1. Hash for each entity's data:
