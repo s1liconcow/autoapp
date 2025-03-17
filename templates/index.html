@@ -50,6 +50,8 @@
             if (historyEntry) {
                 sendRequest(historyEntry.method, historyEntry.path, historyEntry.data, false);
                 updateNavigationButtons();
+                // Update URL without adding to history
+                window.history.replaceState(historyEntry, '', historyEntry.path);
             }
         }
 
@@ -76,6 +78,9 @@
                 historyStack.push({ method, path, data });
                 currentIndex = historyStack.length - 1;
                 updateNavigationButtons();
+
+                // Update browser history
+                window.history.pushState({ method, path, data }, '', path);
             }
 
             // Show loading state
@@ -115,6 +120,10 @@
         function setupEventHandlers(container) {
             // Handle clicks on links
             container.addEventListener('click', async (e) => {
+                // If the clicked element is an input, do not navigate
+                if (e.target.tagName.toLowerCase() === 'input') {
+                    return;
+                }
                 const link = e.target.closest('a');
                 if (link) {
                     e.preventDefault();
@@ -147,22 +156,36 @@
                     showNotification('Operation completed successfully');
                 }
             });
-
-            // Handle button clicks that might trigger actions
-            container.addEventListener('click', async (e) => {
-                const button = e.target.closest('button');
-                if (button && button.getAttribute('data-action')) {
-                    e.preventDefault();
-                    const action = button.getAttribute('data-action');
-                    const method = button.getAttribute('data-method') || 'GET';
-                    await sendRequest(method, action);
-                }
-            });
         }
 
         // Update initial load
         document.addEventListener('DOMContentLoaded', () => {
             sendRequest('GET', '/', null, true);
+            // Replace initial history entry to avoid back button on first load
+            window.history.replaceState({ method: 'GET', path: '/' }, '', '/');
+        });
+
+        // Handle back/forward button navigation
+        window.addEventListener('popstate', (event) => {
+            if (event.state) {
+                const { method, path, data } = event.state;
+                sendRequest(method, path, data, false);
+
+                // Find the index of the current state in historyStack
+                const index = historyStack.findIndex(entry =>
+                    entry.method === method && entry.path === path && JSON.stringify(entry.data) === JSON.stringify(data)
+                );
+                if (index !== -1) {
+                    currentIndex = index;
+                    updateNavigationButtons();
+                }
+            } else {
+                // If state is null (e.g., initial load or history manipulation outside of app)
+                // Optionally handle this case, for now, just navigate to home
+                sendRequest('GET', '/', null, false);
+                currentIndex = 0; // Reset current index to the beginning
+                updateNavigationButtons();
+            }
         });
     </script>
 </body>

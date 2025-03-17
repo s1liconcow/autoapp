@@ -26,17 +26,16 @@ async def get_response(message: str = Form(...)):
         data_model = redis_client.client.get(settings.DATA_MODEL_KEY)
         
         # Format prompt with system context and user message
-        prompt = llm_client.format_prompt(
-            user_message=message,
+        system_prompt = llm_client.format_prompt(
             data_model=data_model,
             redis_keys=redis_keys 
         )
         
         
-        logger.info("\n=== LLM Request ===\n%s\n==================", prompt)
+        logger.info("\n=== LLM Request ===\n%s\n%s\n==================", system_prompt, message)
         
         # Get LLM response
-        response_text = await llm_client.get_response(prompt)
+        response_text = await llm_client.get_response(message, system_prompt)
         
         # Clean up response text
         response_text = response_text.strip()

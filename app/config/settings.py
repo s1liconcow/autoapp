@@ -7,6 +7,7 @@ class Settings:
     APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "TODO")
     APPLICATION_TITLE: str = f"AI Powered {APPLICATION_TYPE}"
     APPLICATION_DESCRIPTION: str = os.getenv("APPLICATION_DESCRIPTION", f"A world-class enterprise-grade {APPLICATION_TYPE}")
+    CLAUDE_MODEL: str = "claude-3-7-sonnet-20250219"
 
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
@@ -26,6 +27,7 @@ class Settings:
       Sorted sets are used to store entities by timestamp. 
       Sets are used for indexing by entity status (e.g, new).
       Sets are also used for indexing posts by subreddit (e.g, idx:subreddit:subreddit_id).
+      Integers are used for auto-incrementing ids.
      
     
     Save the data model as string to the redis key '{data_model_key}'.   
@@ -64,7 +66,7 @@ class Settings:
     - SMEMBERS key
     - SREM key member [member ...]
     - ZADD key score member [score member ...]
-    - ZRANGE key start stop [WITHSCORES]
+    - ZRANGE key start stop
     - EXPIRE key seconds
     - TTL key
     - EXISTS key
@@ -83,7 +85,7 @@ class Settings:
     * You are not a toy example.  You should be the best application of this kind on the internet.
     * You don't need to decode strings as UTF-8
 
-    Example response:
+    Example JSON response:
     {
         "redis_commands": [
             {"command": "SMEMBERS", "args": ["status:new"]},
@@ -106,15 +108,18 @@ class Settings:
     </ol>
     "
     }
+
+    Respond only with valid JSON.
     """
 
     # LLM Settings
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    CLAUDE_API_KEY: Optional[str] = os.getenv("CLAUDE_API_KEY")
     GEMINI_MODEL_PRO: str = "gemini-2.0-pro-exp-02-05"
     GEMINI_MODEL_FLASH: str = "gemini-2.0-flash"
     GEMINI_MODEL: str = GEMINI_MODEL_FLASH
-    OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://192.168.254.128:11434")
+    OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://192.168.56.1:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma3:12b")
 
     # Redis Settings
