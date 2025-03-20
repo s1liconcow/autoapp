@@ -13,20 +13,28 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@router.post("/get_response", response_class=HTMLResponse)
-async def get_response(message: str = Form(...), db_type: str = Form("redis")):
+@router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def catch_all(request: Request, path: str):
     db_type = settings.DB_TYPE
-    db_client: DatabaseClient 
+    db_client: DatabaseClient
     if db_type == "sql":
         db_client = sql_client.sql_client
     else:
         db_client = redis_client.redis_client
-    
+
+    method = request.method
+    path_url = request.url.path # Use request.url.path to get the path
+    message_content = f"{method} {path_url}"
+    if method != "GET": # Include body for non-GET requests
+        try:
+            body = await request.body()
+            body_str = body.decode('utf-8')
+            if body_str:
+                message_content += f"\n{body_str}" # Append body to message
+        except Exception as e:
+            logger.warning(f"Could not read request body: {e}")
+
+
     try:
         data_model = db_client.get_schema()
         # Format prompt with system context and user message
@@ -35,11 +43,11 @@ async def get_response(message: str = Form(...), db_type: str = Form("redis")):
         )
 
         logger.info(
-            "\n=== LLM Request ===\n%s\n%s\n==================", system_prompt, message
+            "\n=== Catch-all LLM Request ===\n%s\n%s\n==================", system_prompt, message_content
         )
 
         # Get LLM response
-        response_text = await llm_client.get_response(message, system_prompt)
+        response_text = await llm_client.get_response(message_content, system_prompt)
 
         # Clean up response text
         response_text = response_text.strip()
@@ -50,7 +58,7 @@ async def get_response(message: str = Form(...), db_type: str = Form("redis")):
         if not response_text.endswith("}"):
             response_text += "}"
 
-        logger.info("\n=== LLM Response ===\n%s\n==================", response_text)
+        logger.info("\n=== Catch-all LLM Response ===\n%s\n==================", response_text)
 
         try:
             # Parse the JSON response
@@ -62,15 +70,19 @@ async def get_response(message: str = Form(...), db_type: str = Form("redis")):
 
             # Prepare template context
             context = {
-                "request": {"url": message},
+                "request": request,
                 "results": db_results,
                 "db": db_client,
             }
 
-            # Render the template
-            template = templates.env.from_string(llm_response["template"])
-            rendered_html = template.render(**context)
-            return rendered_html
+            # Render the template from LLM response
+            llm_template = templates.env.from_string(llm_response["template"])
+            rendered_html = llm_template.render(**context)
+
+            # Render the index.html template, injecting the rendered_html into the body
+            return templates.TemplateResponse(
+                "index.html", {"request": request, "body": rendered_html}
+            )
 
         except json.JSONDecodeError as json_error:
             logger.error("JSON parsing error: %s", str(json_error))
@@ -93,5 +105,5 @@ async def get_response(message: str = Form(...), db_type: str = Form("redis")):
             </div>
             """
     except Exception as e:
-        logger.error("Unexpected error: %s", str(e), exc_info=True)
+        logger.error("Unexpected error in catch-all route: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

@@ -5,7 +5,7 @@ from typing import Optional
 class Settings:
     # Application Settings
     DEV_MODE: bool = os.getenv("DEV_MODE", "true").lower() == "true"
-    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "TODO")
+    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "shopify_ecommerce_platform")
     APPLICATION_TITLE: str = f"AI Powered {APPLICATION_TYPE}"
     APPLICATION_DESCRIPTION: str = os.getenv(
         "APPLICATION_DESCRIPTION", f"A world-class enterprise-grade {APPLICATION_TYPE}"
@@ -101,6 +101,7 @@ class Settings:
     * The result of sql commands will be available in a 'results' dictionary with the command's name as the key.
         For example "results['query_active_users']" returns a list of tuples (rows).
     * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
+    * the Jinja template represents the HTML <body> so it should include the header and footer of the application.
     * You are not a toy example.  You should be the best application of this kind on the internet.
 
     Example JSON response:

@@ -47,7 +47,7 @@ class LLMClient:
 
             response = client.messages.create(
                 model=settings.CLAUDE_MODEL,
-                max_tokens=1000,
+                max_tokens=3000,
                 system=[{"type": "text", "text": system}] if system else None,
                 messages=[{"role": "user", "content": "{" + user}],
             )
