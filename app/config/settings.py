@@ -15,7 +15,7 @@ class Settings:
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
     SQLITE_DB_PATH: str = f"{APPLICATION_TYPE}.db"
-    SQLITE_SETTINGS_DB_PATH: str = "app.db"
+    APP_SETTINGS_DB_PATH: str = "app.db"
 
     # Prompts
     #
@@ -98,7 +98,8 @@ class Settings:
     You can query sqlite and render a Jinja template for the user.
 
     * You should provide a beautiful and engaging user experience to the user.
-    * You can create links to other pages that make sense for your type of application.
+    * You can create relative links to other pages that make sense for your type of application.
+    * All links should be relative!
     * The result of sql commands will be available in a 'results' dictionary with the command's name as the key.
         For example "results['query_active_users']" returns a list of tuples (rows).
     * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
@@ -135,7 +136,8 @@ class Settings:
     You can query redis and render a Jinja template for the user.
 
     * You should provide a beautiful and engaging user experience to the user.
-    * You can create links to other pages that make sense for your type of application.
+    * You can create relative links to other pages that make sense for your type of application.
+    * all links should be relative!
     * Any redis commands will be available in a 'redis_results' dictionary with the command's first arg as the key.
         For example "redis_results['status:new']" for the command below.
     * Your jinja template additionally has access to the redis python client as 'redis'.
@@ -172,7 +174,7 @@ class Settings:
 
     RESPONSE_PROMPT = SQL_RESPONSE_PROMPT
 
-    DB_TYPE = "sql"
+    SQLITE_SETTINGS_DB_PATH = "app.db"
 
     # LLM Settings
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()

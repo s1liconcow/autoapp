@@ -5,3 +5,4 @@ llm_interactions.log
 test.json
 *.db
 .vscode
+.aider*

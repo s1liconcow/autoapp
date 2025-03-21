@@ -2,11 +2,11 @@ from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import json
-
-import app
+import uuid
 from app.config.settings import settings
-from app.db import DatabaseClient, redis_client, settings_db_client
+from app.db.settings_db_client import settings_db_client
 from app.db import sql_client
+from app.llm import database_init
 from app.llm.client import llm_client
 from app.utils.logger import logger
 
@@ -19,28 +19,75 @@ async def update_settings(
     application_type: str = Form(...),
     prompt_template: str = Form(...),
     page_instructions: str = Form(None),
-    current_url: str = Form(None)
+    path: str = Form(None),
 ):
-    logger.info(f"Updating page settings for: {current_url}")
+    logger.info(f"Updating page settings for: {path}")
     logger.info(f"Updating settings with application_type: {application_type}")
     logger.info(f"Updating settings with prompt_template: {prompt_template}")
     logger.info(f"Updating settings with page_instructions: {page_instructions}")
+    guid = path.split('/')[0]
+    path = "/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
 
-    settings_db_client.settings_db_client.update_settings(application_type, prompt_template, page_instructions, current_url) # Persist settings to DB
+    settings_db_client.update(guid, application_type, prompt_template, page_instructions, path) # Persist settings to DB
 
-    return RedirectResponse(current_url, status_code=303) # Redirect back to homepage
+    return RedirectResponse("/"+guid+"/"+path, status_code=303) # Redirect back to homepage
+
+@router.post("/")
+async def root_post(request: Request, application_type: str = Form(...)):
+    guid = uuid.uuid4()
+    guid_str = str(guid)
+    settings_db_client.update(guid_str, application_type, settings.RESPONSE_PROMPT, "", "/") # Persist settings to DB
+    return RedirectResponse("/" + guid_str, status_code=303)
+
+@router.get("/")
+async def root_get(request: Request):
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "body":  """
+            <div>
+                <form method="post" action="/" class="">
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">Application Type</label>
+                        <input type="text" name="application_type" placeholder="TODO"
+                            class="input input-bordered w-full max-w-xs"
+                            value="TODO" />
+                    </div>
+                    <button class="btn btn-primary" type="submit">Create App</button>
+                </form>
+            </div>
+        """, "app_settings": {"application_type": "TODO"}}
+    )
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
-    db_type = settings.DB_TYPE
-    db_client: DatabaseClient
-    if db_type == "sql":
-        db_client = sql_client.sql_client
-    else:
-        db_client = redis_client.redis_client
+    guid = None
+    flash_message = None
+    if path and path == "favicon.ico": # ignore favicon requests
+        return
+
+    guid = path.split('/')[0]
+    path = "/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
+
+    app_settings = settings_db_client.get(guid, path)
+    db_client = sql_client.SqlClient(f"{guid}.db")
+    if not db_client.is_initialized():
+        # flash a notice that this will take a moment
+        flash_message = "Database is initializing, this may take a moment."
+        import asyncio
+        app_type = app_settings['application_type']
+        asyncio.create_task(database_init.DatabaseInitializer(db_client, app_type).initialize_database())
+        context = {
+            "flash_message": flash_message
+        }
+
+        # Render the index.html template, injecting the rendered_html into the body
+        return templates.TemplateResponse(
+            "index.html", {"request": request, "body": "", "app_settings": app_settings, "flash_message":flash_message}
+        )
 
     method = request.method
     path_url = request.url.path # Use request.url.path to get the path
+    if guid:
+        path_url = "/" + "/".join(path.split('/')[1:]) # reconstruct path without guid for db lookup
     message_content = f"{method} {path_url}"
     if method != "GET": # Include body for non-GET requests
         try:
@@ -51,12 +98,9 @@ async def catch_all(request: Request, path: str):
         except Exception as e:
             logger.warning(f"Could not read request body: {e}")
 
-
     try:
         data_model = db_client.get_schema()
 
-        app_settings_db = settings_db_client.settings_db_client
-        app_settings = app_settings_db.get_settings(path_url)
         # Format prompt with system context and user message
         system_prompt = llm_client.format_prompt(
             data_model=data_model,
@@ -93,7 +137,8 @@ async def catch_all(request: Request, path: str):
             context = {
                 "request": request,
                 "results": db_results,
-                "db": db_client
+                "db": db_client,
+                "flash_message": flash_message
             }
 
             # Render the template from LLM response
@@ -102,7 +147,7 @@ async def catch_all(request: Request, path: str):
 
             # Render the index.html template, injecting the rendered_html into the body
             return templates.TemplateResponse(
-                "index.html", {"request": request, "body": rendered_html, "app_settings": app_settings_db.get_settings(path_url)}
+                "index.html", {"request": request, "body": rendered_html, "app_settings": app_settings, "flash_message":flash_message}
             )
 
         except json.JSONDecodeError as json_error:

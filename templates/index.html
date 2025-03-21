@@ -31,9 +31,26 @@
         <div class="p-4">
             {{body|safe}}
         </div>
+        {% if flash_message %}
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ flash_message }}</span>
+        </div>
+        {% endif %}
     </div>
     <div class="drawer-side">
         <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <script>
+            if ("{{ flash_message }}" === "Database is initializing, this may take a moment.") {
+                setTimeout(function () {
+                    window.location.reload();
+                }, 3000); // Reload after 3 seconds
+            }
+        </script>
         <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
             <li>
                 <div class="font-bold">Settings</div>
@@ -57,7 +74,7 @@
                             <textarea name="prompt_template" placeholder="Your prompt here"
                                 class="textarea textarea-bordered w-full h-96">{{ app_settings.prompt_template }}</textarea>
                         </div>
-                        <input type="hidden" name="current_url" id="currentUrl" value="">
+                        <input type="hidden" name="path" id="currentUrl" value="">
                         <button class="btn btn-primary" type="submit">Update Settings</button>
                     </form>
                 </div>
