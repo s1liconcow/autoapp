@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 
 from app.config.settings import settings
 from app.llm.client import llm_client
-from app.db import DatabaseClient
+from app.db import DatabaseClient, settings_db_client
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -18,10 +18,13 @@ class DatabaseInitializer:
         db_client: DatabaseClient
     ):
         self.db_client = db_client
+        self.app_settings = settings_db_client.settings_db_client
 
     async def initialize_database(self):
         """Initialize Redis with sample data from LLM"""
         # Check if database is already initialized
+        self.app_settings.initialize_db()
+
         if self.db_client.is_initialized():
             logger.info("Database already initialized, skipping initialization")
             return

@@ -5,7 +5,7 @@ from typing import Optional
 class Settings:
     # Application Settings
     DEV_MODE: bool = os.getenv("DEV_MODE", "true").lower() == "true"
-    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "shopify_ecommerce_platform")
+    APPLICATION_TYPE: str = os.getenv("APPLICATION_TYPE", "TODO")
     APPLICATION_TITLE: str = f"AI Powered {APPLICATION_TYPE}"
     APPLICATION_DESCRIPTION: str = os.getenv(
         "APPLICATION_DESCRIPTION", f"A world-class enterprise-grade {APPLICATION_TYPE}"
@@ -15,6 +15,7 @@ class Settings:
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
     SQLITE_DB_PATH: str = f"{APPLICATION_TYPE}.db"
+    SQLITE_SETTINGS_DB_PATH: str = "app.db"
 
     # Prompts
     #
@@ -94,7 +95,7 @@ class Settings:
     """
 
     SQL_RESPONSE_PROMPT: str = """
-    You can query sql and render a Jinja template for the user.
+    You can query sqlite and render a Jinja template for the user.
 
     * You should provide a beautiful and engaging user experience to the user.
     * You can create links to other pages that make sense for your type of application.

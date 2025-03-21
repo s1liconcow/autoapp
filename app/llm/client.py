@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from app.config.settings import settings
 from app.utils.logger import logger
+from app.db import settings_db_client
 
 
 class LLMClient:
@@ -13,6 +14,7 @@ class LLMClient:
             if not settings.GEMINI_API_KEY:
                 raise ValueError("GEMINI_API_KEY environment variable not set")
             self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        self.app_settings_db = settings_db_client.settings_db_client
 
     async def get_response(self, user: str, system: Optional[str] = None) -> str | None:
         """Get response from configured LLM provider"""
@@ -92,15 +94,20 @@ class LLMClient:
                     f"Ollama API error: {response.status_code} - {response.text}"
                 )
 
-    def format_prompt(self, data_model: str, redis_keys: str = None) -> str:
+    def format_prompt(self, data_model: str, app_settings: dict) -> str:
         """Format the prompt with system context and user message"""
+        per_page_settings = ""
+        if app_settings['page_instructions']:
+            per_page_settings = f"Page specific instructions:\n{app_settings['page_instructions']}"
         system_prompt = f"""
-        You are a modern world-class full featured {settings.APPLICATION_TYPE} web application.
+        You are a modern world-class full featured {app_settings['application_type']} web application.
 
         Your data model is:
         {data_model}
 
-        {settings.RESPONSE_PROMPT}
+        {app_settings['prompt_template']}
+
+        {per_page_settings}
         """
 
         return system_prompt

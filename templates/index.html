@@ -10,4 +10,64 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
 </head>
 
-{{body|safe}}
+<body class="drawer">
+    <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content">
+        <div class="navbar bg-base-100">
+            <div class="flex-none">
+                <label for="my-drawer" class="btn btn-square btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="inline-block w-8 h-8 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </label>
+            </div>
+            <div class="flex-1">
+                <a class="btn btn-ghost normal-case text-xl" href="/">An AI-powered {{app_settings.application_type}}
+                    application</a>
+            </div>
+        </div>
+        <div class="p-4">
+            {{body|safe}}
+        </div>
+    </div>
+    <div class="drawer-side">
+        <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+            <li>
+                <div class="font-bold">Settings</div>
+                <div>
+                    <form method="post" action="/update_settings" class="">
+                        <div>
+                            <label class="block mb-2 text-sm font-bold text-gray-700">Application Type</label>
+                            <input type="text" name="application_type" placeholder="TODO"
+                                class="input input-bordered w-full max-w-xs"
+                                value="{{ app_settings.application_type }}" />
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-bold text-gray-700">Page Specific Instructions</label>
+                            <input type="text" name="page_instructions"
+                                placeholder="Instructions for this page (optional)"
+                                class="input input-bordered w-full max-w-xs"
+                                value="{{ app_settings.page_instructions }}" />
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-bold text-gray-700">Prompt Template</label>
+                            <textarea name="prompt_template" placeholder="Your prompt here"
+                                class="textarea textarea-bordered w-full h-96">{{ app_settings.prompt_template }}</textarea>
+                        </div>
+                        <input type="hidden" name="current_url" id="currentUrl" value="">
+                        <button class="btn btn-primary" type="submit">Update Settings</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+
+<script>
+    document.getElementById('currentUrl').value = window.location.pathname;
+</script>
+
+</html>

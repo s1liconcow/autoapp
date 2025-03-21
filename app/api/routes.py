@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import json
 
+import app
 from app.config.settings import settings
-from app.db import DatabaseClient, redis_client
+from app.db import DatabaseClient, redis_client, settings_db_client
 from app.db import sql_client
 from app.llm.client import llm_client
 from app.utils.logger import logger
@@ -12,6 +13,22 @@ from app.utils.logger import logger
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+@router.api_route("/update_settings", methods=["POST"])
+async def update_settings(
+    request: Request,
+    application_type: str = Form(...),
+    prompt_template: str = Form(...),
+    page_instructions: str = Form(None),
+    current_url: str = Form(None)
+):
+    logger.info(f"Updating page settings for: {current_url}")
+    logger.info(f"Updating settings with application_type: {application_type}")
+    logger.info(f"Updating settings with prompt_template: {prompt_template}")
+    logger.info(f"Updating settings with page_instructions: {page_instructions}")
+
+    settings_db_client.settings_db_client.update_settings(application_type, prompt_template, page_instructions, current_url) # Persist settings to DB
+
+    return RedirectResponse(current_url, status_code=303) # Redirect back to homepage
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
@@ -37,9 +54,13 @@ async def catch_all(request: Request, path: str):
 
     try:
         data_model = db_client.get_schema()
+
+        app_settings_db = settings_db_client.settings_db_client
+        app_settings = app_settings_db.get_settings(path_url)
         # Format prompt with system context and user message
         system_prompt = llm_client.format_prompt(
-            data_model=data_model
+            data_model=data_model,
+            app_settings=app_settings
         )
 
         logger.info(
@@ -72,7 +93,7 @@ async def catch_all(request: Request, path: str):
             context = {
                 "request": request,
                 "results": db_results,
-                "db": db_client,
+                "db": db_client
             }
 
             # Render the template from LLM response
@@ -81,7 +102,7 @@ async def catch_all(request: Request, path: str):
 
             # Render the index.html template, injecting the rendered_html into the body
             return templates.TemplateResponse(
-                "index.html", {"request": request, "body": rendered_html}
+                "index.html", {"request": request, "body": rendered_html, "app_settings": app_settings_db.get_settings(path_url)}
             )
 
         except json.JSONDecodeError as json_error:
