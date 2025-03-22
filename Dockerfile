@@ -6,6 +6,20 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV APP_HOME /app
 ENV SQLITE_DB_PATH /data/
+
+RUN apt-get update && apt-get install -y \
+lsb-release \
+gnupg \
+curl \
+sqlite3 \
+build-essential \
+git \
+procps \
+htop \
+apt-get update && \
+apt-get install -y caddy && \
+apt-get clean
+
 RUN mkdir -p $APP_HOME
 
 WORKDIR $APP_HOME
@@ -18,5 +32,5 @@ RUN set -ex && \
 
 COPY . .
 
-CMD ['fastapi', 'run']
+CMD ["fastapi", "dev", "--host=0.0.0.0"]
 EXPOSE 8000

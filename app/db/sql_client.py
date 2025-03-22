@@ -49,7 +49,3 @@ class SqlClient(DatabaseClient):
 
     def mark_initialized(self) -> None:
         pass
-
-
-# Create global SQLite client instance
-sql_client = SqlClient()

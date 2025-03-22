@@ -7,7 +7,6 @@ from typing import Dict, Any, List, Optional
 from app.config.settings import settings
 from app.llm.client import llm_client
 from app.db import DatabaseClient
-from app.db.settings_db_client import SettingsDBClient
 
 # Configure logging
 logger = logging.getLogger(__name__)

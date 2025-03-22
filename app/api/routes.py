@@ -30,7 +30,7 @@ async def update_settings(
 
     settings_db_client.update(guid, application_type, prompt_template, page_instructions, path) # Persist settings to DB
 
-    return RedirectResponse("/"+guid+"/"+path, status_code=303) # Redirect back to homepage
+    return RedirectResponse(guid+"/"+path, status_code=303) # Redirect back to homepage
 
 @router.post("/")
 async def root_post(request: Request, application_type: str = Form(...)):
@@ -65,10 +65,12 @@ async def catch_all(request: Request, path: str):
         return
 
     guid = path.split('/')[0]
+    if not guid:
+        raise HTTPException(status_code=400, detail="GUID is missing from the path")
     path = "/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
 
     app_settings = settings_db_client.get(guid, path)
-    db_client = sql_client.SqlClient(f"{guid}.db")
+    db_client = sql_client.SqlClient(f"{settings.SQLITE_DB_PATH}{guid}.db")
     if not db_client.is_initialized():
         # flash a notice that this will take a moment
         flash_message = "Database is initializing, this may take a moment."
@@ -151,6 +153,11 @@ async def catch_all(request: Request, path: str):
                 href = a_tag['href']
                 if not href.startswith(('http://', 'https://', 'mailto:')):
                     a_tag['href'] = '/' + guid + '/' + href.lstrip('/')
+            
+            for form_tag in soup.find_all('form', action=True):
+                action = form_tag['action'] 
+                if not href.startswith(('http://', 'https://', 'mailto:')):
+                    form_tag['action'] = '/' + guid + '/' + action.lstrip('/')
 
             rendered_html = str(soup)
 

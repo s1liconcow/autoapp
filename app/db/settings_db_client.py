@@ -71,4 +71,4 @@ class SettingsDBClient:
         finally:
             self._close()
 
-settings_db_client = SettingsDBClient()
+settings_db_client = SettingsDBClient(settings.SQLITE_SETTINGS_DB_PATH)

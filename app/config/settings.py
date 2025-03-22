@@ -14,8 +14,6 @@ class Settings:
 
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
-    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", "")
-
     # Prompts
     #
     SQL_PROMPT_TEMPLATE: str = """
@@ -78,49 +76,10 @@ class Settings:
     Respond only with valid JSON 
     """
 
-    REDIS_RESPONSE_PROMPT: str = """
-    You can query redis and render a Jinja template for the user.
-
-    * You should provide a beautiful and engaging user experience to the user.
-    * You can create relative links to other pages that make sense for your type of application.
-    * all links should be relative!
-    * Any redis commands will be available in a 'redis_results' dictionary with the command's first arg as the key.
-        For example "redis_results['status:new']" for the command below.
-    * Your jinja template additionally has access to the redis python client as 'redis'.
-    * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
-    * You are not a toy example.  You should be the best application of this kind on the internet.
-    * You don't need to decode strings as UTF-8
-
-    Example JSON response:
-    {
-        "redis_commands": [
-            {"command": "SMEMBERS", "args": ["status:new"]},
-            {"command": "LRANGE", "args": ["entity_ids", "0", "-1"]},
-        ],
-        "template": "
-    <h1>New Entities</h1>
-    <ul>
-    {% for entity_id in redis_results['status:new'] %}
-        {% set entity = redis.hgetall(entity_id) %}
-        <li><a href="/entity/{{ entity_id.split(':')[1] }}">{{ entity.title }}</a></li>
-    {% endfor %}
-    </ul>
-
-    <h1>All Entity IDs</h1>
-    <ol>
-    {% for entity_id in redis_results['entity_ids'] %}
-        <li>{{ entity_id.split(':')[1] }}</li>
-    {% endfor %}
-    </ol>
-    "
-    }
-
-    Respond only with valid JSON.
-    """
-
     RESPONSE_PROMPT = SQL_RESPONSE_PROMPT
 
-    SQLITE_SETTINGS_DB_PATH = "{SQLITE_DB_PATH}/app.db"
+    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", "")
+    SQLITE_SETTINGS_DB_PATH = f"{SQLITE_DB_PATH}app.db"
 
     # LLM Settings
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()
@@ -197,6 +156,46 @@ class Settings:
     #- EXISTS key
     #- KEYS pattern
     #"""
+    #REDIS_RESPONSE_PROMPT: str = """
+    #You can query redis and render a Jinja template for the user.
+
+    #* You should provide a beautiful and engaging user experience to the user.
+    #* You can create relative links to other pages that make sense for your type of application.
+    #* all links should be relative!
+    #* Any redis commands will be available in a 'redis_results' dictionary with the command's first arg as the key.
+    #    For example "redis_results['status:new']" for the command below.
+    #* Your jinja template additionally has access to the redis python client as 'redis'.
+    #* Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
+    #* You are not a toy example.  You should be the best application of this kind on the internet.
+    #* You don't need to decode strings as UTF-8
+
+    #Example JSON response:
+    #{
+    #    "redis_commands": [
+    #        {"command": "SMEMBERS", "args": ["status:new"]},
+    #        {"command": "LRANGE", "args": ["entity_ids", "0", "-1"]},
+    #    ],
+    #    "template": "
+    #<h1>New Entities</h1>
+    #<ul>
+    #{% for entity_id in redis_results['status:new'] %}
+    #    {% set entity = redis.hgetall(entity_id) %}
+    #    <li><a href="/entity/{{ entity_id.split(':')[1] }}">{{ entity.title }}</a></li>
+    #{% endfor %}
+    #</ul>
+
+    #<h1>All Entity IDs</h1>
+    #<ol>
+    #{% for entity_id in redis_results['entity_ids'] %}
+    #    <li>{{ entity_id.split(':')[1] }}</li>
+    #{% endfor %}
+    #</ol>
+    #"
+    #}
+
+    #Respond only with valid JSON.
+    #"""
+
 
 
 settings = Settings()
