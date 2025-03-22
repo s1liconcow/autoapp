@@ -14,8 +14,7 @@ class Settings:
 
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
-    SQLITE_DB_PATH: str = f"{APPLICATION_TYPE}.db"
-    APP_SETTINGS_DB_PATH: str = "app.db"
+    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", "")
 
     # Prompts
     #
@@ -121,7 +120,7 @@ class Settings:
 
     RESPONSE_PROMPT = SQL_RESPONSE_PROMPT
 
-    SQLITE_SETTINGS_DB_PATH = "app.db"
+    SQLITE_SETTINGS_DB_PATH = "{SQLITE_DB_PATH}/app.db"
 
     # LLM Settings
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()

@@ -7,8 +7,8 @@ from app.utils.logger import logger
 
 
 class SqlClient(DatabaseClient):
-    def __init__(self, db_path: str = settings.SQLITE_DB_PATH):
-        self.db_path = db_path
+    def __init__(self, db_path: str):
+        self.db_path = f"{settings.SQLITE_DB_PATH}/{db_path}"
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
 
