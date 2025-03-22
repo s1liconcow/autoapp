@@ -129,7 +129,7 @@ class Settings:
     "
     }
 
-    Respond only with valid JSON.
+    Respond only with valid JSON 
     """
 
     REDIS_RESPONSE_PROMPT: str = """

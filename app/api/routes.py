@@ -9,6 +9,7 @@ from app.db import sql_client
 from app.llm import database_init
 from app.llm.client import llm_client
 from app.utils.logger import logger
+from bs4 import BeautifulSoup
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -144,6 +145,15 @@ async def catch_all(request: Request, path: str):
             # Render the template from LLM response
             llm_template = templates.env.from_string(llm_response["template"])
             rendered_html = llm_template.render(**context)
+
+            # Find all links in the rendered HTML and preface them with /$guid/
+            soup = BeautifulSoup(rendered_html, 'html.parser')
+            for a_tag in soup.find_all('a', href=True):
+                href = a_tag['href']
+                if not href.startswith(('http://', 'https://', 'mailto:')):
+                    a_tag['href'] = '/' + guid + '/' + href.lstrip('/')
+
+            rendered_html = str(soup)
 
             # Render the index.html template, injecting the rendered_html into the body
             return templates.TemplateResponse(

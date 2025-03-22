@@ -47,10 +47,10 @@ class SettingsDBClient:
         settings_row = cursor.fetchone()
         cursor.execute(f"SELECT page_instructions FROM {PAGE_INSTRUCTIONS_TABLE_NAME} WHERE page_path = ? AND guid = ? LIMIT 1", (page_path, guid))
         page_instructions_row = cursor.fetchone()
+        if not page_instructions_row:
+            page_instructions_row = [""]
         self._close()
-        if not settings_row:
-            return None
-        return {"application_type": settings_row[0], "prompt_template": settings_row[1], "page_instructions": page_instructions_row[0] or ""}
+        return {"application_type": settings_row[0], "prompt_template": settings_row[1], "page_instructions": page_instructions_row[0]}
 
     def update(self, guid: str, application_type: str, prompt_template: str, page_instructions: str, page_path: str):
         conn = self._connect()
