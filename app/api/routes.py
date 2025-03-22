@@ -18,17 +18,15 @@ templates = Jinja2Templates(directory="templates")
 async def update_settings(
     request: Request,
     application_type: str = Form(...),
-    prompt_template: str = Form(...),
     page_instructions: str = Form(None),
     path: str = Form(None),
 ):
-    logger.info(f"Updating page settings for: {path}")
-    logger.info(f"Updating settings with prompt_template: {prompt_template}")
     logger.info(f"Updating settings with page_instructions: {page_instructions}")
-    guid = path.split('/')[0]
-    path = "/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
+    guid = path.split('/')[1]
+    path = "/"+"/".join(path.split('/')[2:]) if len(path.split('/')) > 1 else "/"
+    logger.info(f"Updating page settings for: {path}")
 
-    settings_db_client.update(guid, application_type, prompt_template, page_instructions, path) # Persist settings to DB
+    settings_db_client.update(guid, application_type, settings.RESPONSE_PROMPT, page_instructions, path) # Persist settings to DB
 
     return RedirectResponse(guid+"/"+path, status_code=303) # Redirect back to homepage
 
@@ -67,7 +65,7 @@ async def catch_all(request: Request, path: str):
     guid = path.split('/')[0]
     if not guid:
         raise HTTPException(status_code=400, detail="GUID is missing from the path")
-    path = "/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
+    path = "/"+"/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
 
     app_settings = settings_db_client.get(guid, path)
     db_client = sql_client.SqlClient(f"{settings.SQLITE_DB_PATH}{guid}.db")
@@ -87,10 +85,7 @@ async def catch_all(request: Request, path: str):
         )
 
     method = request.method
-    path_url = request.url.path # Use request.url.path to get the path
-    if guid:
-        path_url = "/" + "/".join(path.split('/')[1:]) # reconstruct path without guid for db lookup
-    message_content = f"{method} {path_url}"
+    message_content = f"{method} {path}"
     if method != "GET": # Include body for non-GET requests
         try:
             body = await request.body()

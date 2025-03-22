@@ -53,12 +53,6 @@
                 <div>
                     <form method="post" action="/update_settings" class="">
                         <div>
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Application Prompt</label>
-                            <input type="text" name="application_type" placeholder="TODO"
-                                class="input input-bordered w-full max-w-xs"
-                                value="{{ app_settings.application_type }}" />
-                        </div>
-                        <div>
                             <label class="block mb-2 text-sm font-bold text-gray-700">Page Specific Instructions</label>
                             <input type="text" name="page_instructions"
                                 placeholder="Instructions for this page (optional)"
@@ -66,9 +60,11 @@
                                 value="{{ app_settings.page_instructions }}" />
                         </div>
                         <div>
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Prompt Template</label>
-                            <textarea name="prompt_template" placeholder="Your prompt here"
-                                class="textarea textarea-bordered w-full h-96">{{ app_settings.prompt_template }}</textarea>
+                            <label class="block mb-2 text-sm font-bold text-gray-700">Application Prompt</label>
+                            <textarea name="application_type" placeholder="TODO"
+                                class="textarea textarea-bordered w-full max-w-xs">
+                                {{ app_settings.application_type }}
+                            </textarea>
                         </div>
                         <input type="hidden" name="path" id="currentUrl" value="">
                         <button class="btn btn-primary" type="submit">Update Settings</button>

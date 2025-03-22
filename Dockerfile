@@ -15,7 +15,7 @@ sqlite3 \
 build-essential \
 git \
 procps \
-htop \
+htop && \
 apt-get update && \
 apt-get install -y caddy && \
 apt-get clean
