@@ -20,9 +20,12 @@ class Settings:
     # Prompts
     #
     SQL_PROMPT_TEMPLATE: str = """
-    We are building a full-featured, modern, AI-enabled web {application_type} application.
+    We are building a full-featured, modern, AI-enabled web application.
+    
+    Application Description:
+    {application_type} 
 
-    Generate sample data for an {application_type} app using SQLite.
+    Generate sample data for the app using SQLite.
     First suggest a database schema and generate insert at least 5 rows of sample data into each table.
      
     Example response format for SQLite:
@@ -36,63 +39,7 @@ class Settings:
 
     REPLY ONLY WITH VALID JSON. Do not provide any improvements or explanations.
     """
-    REDIS_INIT_PROMPT_TEMPLATE: str = """
-    We are building a full-featured, modern, AI-enabled web {application_type} application.
-
-    First suggest a data model, this will be passed to future LLM calls so they can understand the schema.
-    A sample data model for a 'reddit' application could be:
-      This application includes users, subreddits, posts and comments.
-      Users have a user_id (string), username (string), email (string), password_hash (string), creation_date (integer - unix timestamp), karma (integer), about (string), and profile_pic_url (string).
-      Subreddits have a subreddit_id (string), name (string), description (string), creation_date (integer - unix timestamp), num_members (integer) and an NSFW boolean.
-      Posts have a post_id (string), title (string), author_id (string - which references the user), subreddit_id (string - which references the subreddit), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer), num_comments (integer), flair (string), and url (string).
-      Comments have a comment_id (string), post_id (string - which references the post), author_id (string - which references the user), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer) and an optional parent_comment_id (string).
-      All entities are stored as hashes with keys named entitytype:entityid (e.g. post:1, user:1, subreddit:1, comment:1).
-      Sorted sets are used to store entities by timestamp. 
-      Sets are used for indexing by entity status (e.g, new).
-      Sets are also used for indexing posts by subreddit (e.g, idx:subreddit:subreddit_id).
-      Integers are used for auto-incrementing ids.
-     
-    Also generate sample data for an {application_type} app using either Redis or SQLite.
-
-    For Redis, create at least 5 sample entities with realistic data using standard Redis data structures to store and index the data.
-
-    Example response format for Redis:
-    {{
-        "commands": [
-            {{"type": "redis", "command": "SET", "args": ["data_model", "generated data model"]}},
-            {{"type": "redis", "command": "HMSET", "args": ["entity:1", "field1", "value1", "field2", "value2"]}},
-            {{"type": "redis", "command": "ZADD", "args": ["entities:by_date", "1709347200", "entity:1"]}},
-            {{"type": "redis", "command": "SADD", "args": ["status:new", "entity:1"]}},
-            {{"type": "redis", "command": "SADD", "args": ["idx:state:CA", "entity:1"]}},
-        ],
-    }}
-
-    REPLY ONLY WITH VALID JSON. Do not provide any improvements or explanations.
-    """
     INIT_PROMPT_TEMPLATE = SQL_PROMPT_TEMPLATE
-
-    REDIS_COMMANDS_HELP: str = """
-    You have access to a Redis database with these common commands:
-    - GET key
-    - SET key value
-    - DEL key
-    - HGET key field
-    - HSET key field value
-    - HMSET key field value [field value ...]
-    - HGETALL key
-    - LPUSH key value [value ...]
-    - RPUSH key value [value ...]
-    - LRANGE key start stop
-    - SADD key member [member ...]
-    - SMEMBERS key
-    - SREM key member [member ...]
-    - ZADD key score member [score member ...]
-    - ZRANGE key start stop
-    - EXPIRE key seconds
-    - TTL key
-    - EXISTS key
-    - KEYS pattern
-    """
 
     SQL_RESPONSE_PROMPT: str = """
     You can query sqlite and render a Jinja template for the user.
@@ -195,6 +142,62 @@ class Settings:
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = int(os.getenv("SERVER_PORT", "8000"))
     WORKERS: int = 1 if DEV_MODE else 2
+    #REDIS_INIT_PROMPT_TEMPLATE: str = """
+    #We are building a full-featured, modern, AI-enabled web {application_type} application.
+
+    #First suggest a data model, this will be passed to future LLM calls so they can understand the schema.
+    #A sample data model for a 'reddit' application could be:
+    #  This application includes users, subreddits, posts and comments.
+    #  Users have a user_id (string), username (string), email (string), password_hash (string), creation_date (integer - unix timestamp), karma (integer), about (string), and profile_pic_url (string).
+    #  Subreddits have a subreddit_id (string), name (string), description (string), creation_date (integer - unix timestamp), num_members (integer) and an NSFW boolean.
+    #  Posts have a post_id (string), title (string), author_id (string - which references the user), subreddit_id (string - which references the subreddit), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer), num_comments (integer), flair (string), and url (string).
+    #  Comments have a comment_id (string), post_id (string - which references the post), author_id (string - which references the user), content (string), timestamp (integer - unix timestamp), upvotes (integer), downvotes (integer) and an optional parent_comment_id (string).
+    #  All entities are stored as hashes with keys named entitytype:entityid (e.g. post:1, user:1, subreddit:1, comment:1).
+    #  Sorted sets are used to store entities by timestamp. 
+    #  Sets are used for indexing by entity status (e.g, new).
+    #  Sets are also used for indexing posts by subreddit (e.g, idx:subreddit:subreddit_id).
+    #  Integers are used for auto-incrementing ids.
+    # 
+    #Also generate sample data for an {application_type} app using either Redis or SQLite.
+
+    #For Redis, create at least 5 sample entities with realistic data using standard Redis data structures to store and index the data.
+
+    #Example response format for Redis:
+    #{{
+    #    "commands": [
+    #        {{"type": "redis", "command": "SET", "args": ["data_model", "generated data model"]}},
+    #        {{"type": "redis", "command": "HMSET", "args": ["entity:1", "field1", "value1", "field2", "value2"]}},
+    #        {{"type": "redis", "command": "ZADD", "args": ["entities:by_date", "1709347200", "entity:1"]}},
+    #        {{"type": "redis", "command": "SADD", "args": ["status:new", "entity:1"]}},
+    #        {{"type": "redis", "command": "SADD", "args": ["idx:state:CA", "entity:1"]}},
+    #    ],
+    #}}
+
+    #REPLY ONLY WITH VALID JSON. Do not provide any improvements or explanations.
+    #"""
+
+    #REDIS_COMMANDS_HELP: str = """
+    #You have access to a Redis database with these common commands:
+    #- GET key
+    #- SET key value
+    #- DEL key
+    #- HGET key field
+    #- HSET key field value
+    #- HMSET key field value [field value ...]
+    #- HGETALL key
+    #- LPUSH key value [value ...]
+    #- RPUSH key value [value ...]
+    #- LRANGE key start stop
+    #- SADD key member [member ...]
+    #- SMEMBERS key
+    #- SREM key member [member ...]
+    #- ZADD key score member [score member ...]
+    #- ZRANGE key start stop
+    #- EXPIRE key seconds
+    #- TTL key
+    #- EXISTS key
+    #- KEYS pattern
+    #"""
 
 
 settings = Settings()

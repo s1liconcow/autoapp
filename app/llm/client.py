@@ -100,7 +100,10 @@ class LLMClient:
         if app_settings['page_instructions']:
             per_page_settings = f"Page specific instructions:\n{app_settings['page_instructions']}"
         system_prompt = f"""
-        You are a modern world-class full featured {app_settings['application_type']} web application.
+        You are a modern world-class full featured web application server.
+
+        Application Description: 
+        {app_settings['application_type']}
 
         Your data model is:
         {data_model}

@@ -10,81 +10,146 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
 </head>
 
-<body class="drawer">
-    <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content">
-        <div class="navbar bg-base-100">
-            <div class="flex-none">
-                <label for="my-drawer" class="btn btn-square btn-ghost">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        class="inline-block w-8 h-8 stroke-current">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </label>
-            </div>
-            <div class="flex-1">
-                <a class="btn btn-ghost normal-case text-xl" href="/">An AI-powered {{app_settings.application_type}}
-                    application</a>
-            </div>
-        </div>
-        <div class="p-4">
-            {{body|safe}}
-        </div>
-        {% if flash_message %}
-        <div class="alert alert-info">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                class="stroke-current shrink-0 w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>{{ flash_message }}</span>
-        </div>
-        {% endif %}
-    </div>
-    <div class="drawer-side">
-        <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-        <script>
-            if ("{{ flash_message }}" === "Database is initializing, this may take a moment.") {
-                setTimeout(function () {
-                    window.location.reload();
-                }, 1000); 
-            }
-        </script>
-        <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-            <li>
-                <div class="font-bold">Settings</div>
-                <div>
-                    <form method="post" action="/update_settings" class="">
-                        <div>
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Application Type</label>
-                            <input type="text" name="application_type" placeholder="TODO"
-                                class="input input-bordered w-full max-w-xs"
-                                value="{{ app_settings.application_type }}" />
-                        </div>
-                        <div>
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Page Specific Instructions</label>
-                            <input type="text" name="page_instructions"
-                                placeholder="Instructions for this page (optional)"
-                                class="input input-bordered w-full max-w-xs"
-                                value="{{ app_settings.page_instructions }}" />
-                        </div>
-                        <div>
-                            <label class="block mb-2 text-sm font-bold text-gray-700">Prompt Template</label>
-                            <textarea name="prompt_template" placeholder="Your prompt here"
-                                class="textarea textarea-bordered w-full h-96">{{ app_settings.prompt_template }}</textarea>
-                        </div>
-                        <input type="hidden" name="path" id="currentUrl" value="">
-                        <button class="btn btn-primary" type="submit">Update Settings</button>
-                    </form>
+<body>
+    <header
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-6 md:px-10 bg-white/80 backdrop-blur-lg shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2">
+                <div class="relative w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">A</span>
                 </div>
-            </li>
-        </ul>
-    </div>
-</body>
+                <span class="font-display font-semibold text-xl">Agora</span>
+            </a>
 
-<script>
-    document.getElementById('currentUrl').value = window.location.pathname;
-</script>
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-sm font-medium hover:text-primary transition-colors">
+                    Features
+                </a>
+                <a href="#workflow" class="text-sm font-medium hover:text-primary transition-colors">
+                    How It Works
+                </a>
+                <a href="#testimonials" class="text-sm font-medium hover:text-primary transition-colors">
+                    Testimonials
+                </a>
+                <a href="#pricing" class="text-sm font-medium hover:text-primary transition-colors">
+                    Pricing
+                </a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button class="rounded-full px-4 border border-gray-300 py-2 text-sm">
+                    Log in
+                </button>
+                <button class="rounded-full px-4 bg-blue-500 text-white py-2 text-sm">
+                    Start Free
+                </button>
+            </div>
+
+            <button class="md:hidden flex items-center justify-center">
+                Menu
+            </button>
+        </div>
+
+        <div
+            class="fixed inset-0 z-40 bg-white flex flex-col pt-24 pb-6 px-6 md:hidden transition-all duration-300 ease-in-out translate-x-full">
+            <nav class="flex flex-col gap-6 mb-10">
+                <a href="#features" class="text-lg font-medium py-2 border-b border-gray-100">
+                    Features
+                </a>
+                <a href="#workflow" class="text-lg font-medium py-2 border-b border-gray-100">
+                    How It Works
+                </a>
+                <a href="#testimonials" class="text-lg font-medium py-2 border-b border-gray-100">
+                    Testimonials
+                </a>
+                <a href="#pricing" class="text-lg font-medium py-2 border-b border-gray-100">
+                    Pricing
+                </a>
+            </nav>
+
+            <div class="mt-auto flex flex-col gap-4 w-full">
+                <button class="w-full rounded-full px-4 border border-gray-300 py-2 text-sm">
+                    Log in
+                </button>
+                <button class="w-full rounded-full px-4 bg-blue-500 text-white py-2 text-sm">
+                    Start Free
+                </button>
+            </div>
+        </div>
+    </header>
+    <section class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-50 to-transparent opacity-70"></div>
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-100/30 blur-3xl"></div>
+            <div class="absolute top-1/3 -left-40 w-96 h-96 rounded-full bg-indigo-100/30 blur-3xl"></div>
+        </div>
+
+        <div class="container-tight relative z-10 flex flex-col items-center text-center">
+
+            <span class="inline-block bg-blue-50 text-blue-600 font-medium px-4 py-1.5 rounded-full text-sm mb-6">
+                Transform your ideas into reality
+            </span>
+
+
+            <h1
+                class="text-4xl md:text-5xl lg:text-7xl font-bold leading-tight md:leading-tight text-center max-w-5xl mx-auto mb-6">
+                End to End AI
+                <span class="text-shimmer">App Generation</span>
+                Platform
+            </h1>
+
+
+            <h2 class="text-xl md:text-2xl font-medium text-gray-500 mb-8 max-w-2xl">
+                No build steps, no application exceptions, just native AI.<span class="animate-pulse">|</span>
+            </h2>
+
+
+            <div class="flex flex-col sm:flex-row gap-4 mb-12">
+                <button class="rounded-full px-6 text-base border border-gray-300 py-3">
+                    Watch Demo
+                </button>
+            </div>
+
+
+            <div class="relative w-full">
+                <div
+                    class="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden border border-white/20 shadow-2xl shadow-blue-200/20">
+                    <div class="absolute top-0 h-10 w-full bg-gray-100/50 flex items-center px-4">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <form method="post" action="/" class="">
+                            <div>
+                                <label class="block mb-2 text-sm font-bold text-gray-700">My Application Vision</label>
+                                <textarea
+                                    class="flex w-full rounded-md px-2 py-2 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none text-[16px] leading-snug placeholder-shown:text-ellipsis placeholder-shown:whitespace-nowrap md:text-base focus-visible:ring-0 focus-visible:ring-offset-0 max-h-[200px] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground bg-transparent focus:bg-transparent"
+                                    name="application_type" autofocus=""
+                                    placeholder="A beautiful TODO application that helps organize my life."
+                                    value="A beautiful TODO application that helps organize my life." rows="3"
+                                    style="height: 78px;">A beautiful TODO application that helps organize my life.</textarea>
+                            </div>
+                            <button type="submit" class="rounded-full px-6 text-base bg-blue-500 text-white py-3">
+                                Create App
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 max-w-3xl mx-auto">
+            </div>
+
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce flex flex-col items-center">
+        </div>
+    </section>
+
+</body>
 
 </html>

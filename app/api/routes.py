@@ -23,7 +23,6 @@ async def update_settings(
     path: str = Form(None),
 ):
     logger.info(f"Updating page settings for: {path}")
-    logger.info(f"Updating settings with application_type: {application_type}")
     logger.info(f"Updating settings with prompt_template: {prompt_template}")
     logger.info(f"Updating settings with page_instructions: {page_instructions}")
     guid = path.split('/')[0]
@@ -82,7 +81,7 @@ async def catch_all(request: Request, path: str):
 
         # Render the index.html template, injecting the rendered_html into the body
         return templates.TemplateResponse(
-            "index.html", {"request": request, "body": "", "app_settings": app_settings, "flash_message":flash_message}
+            "app.html", {"request": request, "body": "", "app_settings": app_settings, "flash_message":flash_message}
         )
 
     method = request.method
@@ -155,9 +154,8 @@ async def catch_all(request: Request, path: str):
 
             rendered_html = str(soup)
 
-            # Render the index.html template, injecting the rendered_html into the body
             return templates.TemplateResponse(
-                "index.html", {"request": request, "body": rendered_html, "app_settings": app_settings, "flash_message":flash_message}
+                "app.html", {"request": request, "body": rendered_html, "app_settings": app_settings, "flash_message":flash_message}
             )
 
         except json.JSONDecodeError as json_error:
