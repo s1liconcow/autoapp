@@ -20,15 +20,19 @@ async def update_settings(
     application_type: str = Form(...),
     page_instructions: str = Form(None),
     path: str = Form(None),
+    clear_templates: bool = Form(False)
 ):
     logger.info(f"Updating settings with page_instructions: {page_instructions}")
     guid = path.split('/')[1]
     path = "/"+"/".join(path.split('/')[2:]) if len(path.split('/')) > 1 else "/"
     logger.info(f"Updating page settings for: {path}")
 
-    settings_db_client.update(guid, application_type, settings.RESPONSE_PROMPT, page_instructions, path) # Persist settings to DB
+    if clear_templates:
+        settings_db_client.clear_templates(guid, path)  # Clear templates for this page
 
-    return RedirectResponse(guid+"/"+path, status_code=303) # Redirect back to homepage
+    settings_db_client.update(guid, application_type, settings.RESPONSE_PROMPT, page_instructions, path)  # Persist settings to DB
+
+    return RedirectResponse(guid+"/"+path, status_code=303)  # Redirect back to homepage
 
 @router.post("/")
 async def root_post(request: Request, application_type: str = Form(...)):
@@ -40,68 +44,59 @@ async def root_post(request: Request, application_type: str = Form(...)):
 @router.get("/")
 async def root_get(request: Request):
     return templates.TemplateResponse(
-        "index.html", {"request": request, "body":  """
-            <div>
-                <form method="post" action="/" class="">
-                    <div>
-                        <label class="block mb-2 text-sm font-bold text-gray-700">Application Type</label>
-                        <input type="text" name="application_type" placeholder="TODO"
-                            class="input input-bordered w-full max-w-xs"
-                            value="TODO" />
-                    </div>
-                    <button class="btn btn-primary" type="submit">Create App</button>
-                </form>
-            </div>
-        """, "app_settings": {"application_type": "TODO"}}
+        "index.html", {"request": request}
     )
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def catch_all(request: Request, path: str):
-    guid = None
-    flash_message = None
-    if path and path == "favicon.ico": # ignore favicon requests
-        return
+    # Extract the GUID from the path
+    parts = path.split('/')
+    guid = parts[0]
+    path = "/" + "/".join(parts[1:]) if len(parts) > 1 else "/"
+    
+    # Get settings for this application
+    settings_data = settings_db_client.get(guid, path)
+    if not settings_data:
+        raise HTTPException(status_code=404, detail="Application not found")
 
-    guid = path.split('/')[0]
-    if not guid:
-        raise HTTPException(status_code=400, detail="GUID is missing from the path")
-    path = "/"+"/".join(path.split('/')[1:]) if len(path.split('/')) > 1 else "/"
-
-    app_settings = settings_db_client.get(guid, path)
+    # Initialize database client
     db_client = sql_client.SqlClient(f"{settings.SQLITE_DB_PATH}{guid}.db")
+    
+    # Handle database initialization if needed
     if not db_client.is_initialized():
-        # flash a notice that this will take a moment
         flash_message = "Database is initializing, this may take a moment."
         import asyncio
-        app_type = app_settings['application_type']
+        app_type = settings_data['application_type']
         asyncio.create_task(database_init.DatabaseInitializer(db_client, app_type).initialize_database())
-        context = {
-            "flash_message": flash_message
-        }
-
-        # Render the index.html template, injecting the rendered_html into the body
         return templates.TemplateResponse(
-            "app.html", {"request": request, "body": "", "app_settings": app_settings, "flash_message":flash_message}
+            "app.html", {"request": request, "body": "", "app_settings": settings_data, "flash_message": flash_message}
         )
 
+    # Prepare message content
     method = request.method
     message_content = f"{method} {path}"
-    if method != "GET": # Include body for non-GET requests
+    if method != "GET":
         try:
             body = await request.body()
             body_str = body.decode('utf-8')
             if body_str:
-                message_content += f"\n{body_str}" # Append body to message
+                message_content += f"\n{body_str}"
         except Exception as e:
             logger.warning(f"Could not read request body: {e}")
+    
+    # For POST requests, add form data to message
+    if method == "POST":
+        form_data = await request.form()
+        user_input = form_data.get("user_input", "")
+        if user_input:
+            message_content = user_input  # Override message content with user input for POST
 
     try:
+        # Get data model and format prompt
         data_model = db_client.get_schema()
-
-        # Format prompt with system context and user message
         system_prompt = llm_client.format_prompt(
             data_model=data_model,
-            app_settings=app_settings
+            app_settings=settings_data
         )
 
         logger.info(
@@ -126,60 +121,64 @@ async def catch_all(request: Request, path: str):
             # Parse the JSON response
             llm_response = json.loads(response_text)
 
-            # Execute database commands based on the selected client
-            db_commands = llm_response.get("commands", [])
-            db_results = db_client.execute_commands(db_commands)
+            # Execute database commands if present
+            db_results = None
+            if "commands" in llm_response:
+                db_results = db_client.execute_commands(llm_response["commands"])
+                
+                # Check for redirect command
+                for cmd in llm_response["commands"]:
+                    if "redirect" in cmd and cmd["redirect"]:
+                        redirect_url = cmd["redirect"]
+                        if not redirect_url.startswith(('http://', 'https://', '/')):
+                            redirect_url = f"/{guid}/{redirect_url}"
+                        elif redirect_url.startswith('/'):
+                            redirect_url = f"/{guid}{redirect_url}"
+                        return RedirectResponse(redirect_url, status_code=303)
 
-            # Prepare template context
-            context = {
-                "request": request,
-                "results": db_results,
-                "db": db_client,
-                "flash_message": flash_message
-            }
+            # Store and render template if present
+            if "template" in llm_response:
+                template = llm_response["template"]
+                if template:
+                    settings_db_client.update(guid, settings_data["application_type"], settings_data["prompt_template"], 
+                                           settings_data["page_instructions"], path, template)
 
-            # Render the template from LLM response
-            llm_template = templates.env.from_string(llm_response["template"])
-            rendered_html = llm_template.render(**context)
+                # Prepare template context
+                context = {
+                    "request": request,
+                    "results": db_results,
+                    "db": db_client,
+                    "path": path,
+                    "guid": guid
+                }
 
-            # Find all links in the rendered HTML and preface them with /$guid/
-            soup = BeautifulSoup(rendered_html, 'html.parser')
-            for a_tag in soup.find_all('a', href=True):
-                href = a_tag['href']
-                if not href.startswith(('http://', 'https://', 'mailto:')):
-                    a_tag['href'] = '/' + guid + '/' + href.lstrip('/')
+                # Render template
+                llm_template = templates.env.from_string(template)
+                rendered_html = llm_template.render(**context)
+
+                # Process links and forms to maintain GUID in paths
+                soup = BeautifulSoup(rendered_html, 'html.parser')
+                for tag in soup.find_all(['a', 'form']):
+                    attr = 'href' if tag.name == 'a' else 'action'
+                    if attr in tag.attrs:
+                        url = tag[attr]
+                        if not url.startswith(('http://', 'https://', 'mailto:')):
+                            tag[attr] = '/' + guid + '/' + url.lstrip('/')
+
+                return templates.TemplateResponse(
+                    "app.html",
+                    {
+                        "request": request,
+                        "body": str(soup),
+                        "app_settings": settings_data
+                    }
+                )
+
+        except json.JSONDecodeError:
+            error_msg = "Invalid JSON response from LLM"
+            logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
             
-            for form_tag in soup.find_all('form', action=True):
-                action = form_tag['action'] 
-                if not href.startswith(('http://', 'https://', 'mailto:')):
-                    form_tag['action'] = '/' + guid + '/' + action.lstrip('/')
-
-            rendered_html = str(soup)
-
-            return templates.TemplateResponse(
-                "app.html", {"request": request, "body": rendered_html, "app_settings": app_settings, "flash_message":flash_message}
-            )
-
-        except json.JSONDecodeError as json_error:
-            logger.error("JSON parsing error: %s", str(json_error))
-            return f"""
-            <div class='error'>
-                <p><strong>Invalid JSON Response:</strong> {str(json_error)}</p>
-                <hr>
-                <p><strong>Raw Response:</strong></p>
-                <pre>{response_text}</pre>
-            </div>
-            """
-        except Exception as template_error:
-            logger.error("Template rendering error: %s", str(template_error))
-            return f"""
-            <div class='error'>
-                <p><strong>Template Error:</strong> {str(template_error)}</p>
-                <hr>
-                <p><strong>LLM Response:</strong></p>
-                <pre>{response_text}</pre>
-            </div>
-            """
     except Exception as e:
         logger.error("Unexpected error in catch-all route: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

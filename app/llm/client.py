@@ -32,12 +32,13 @@ class LLMClient:
                                 "properties": {
                                     "name": {"type": "string"},
                                     "query": {"type": "string"},
-                                    },
-                                },
-                            },
-                        },
-                        "type": "OBJECT"
+                                    "redirect": {"type": "string", "description": "Optional URL to redirect to"}
+                                }
+                            }
+                        }
                     },
+                    "type": "OBJECT"
+                }
             )
             response = self.client.models.generate_content(
                 model=settings.GEMINI_MODEL, contents=[user], config=config
@@ -99,6 +100,17 @@ class LLMClient:
         per_page_settings = ""
         if app_settings['page_instructions']:
             per_page_settings = f"Page specific instructions:\n{app_settings['page_instructions']}"
+
+        previous_template = ""
+        if app_settings.get('generated_template'):
+            previous_template = f"""
+            Previously generated template for this page:
+            ```html
+            {app_settings['generated_template']}
+            ```
+            Please maintain consistency with this template structure while making necessary updates for the current request.
+            """
+
         system_prompt = f"""
         You are a modern world-class full featured web application server.
 
@@ -111,6 +123,8 @@ class LLMClient:
         {app_settings['prompt_template']}
 
         {per_page_settings}
+
+        {previous_template}
         """
 
         return system_prompt

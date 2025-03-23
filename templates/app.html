@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto AI Application</title>
+    <title>Agora AI Generated Application</title>
     <!-- Add Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
@@ -51,7 +51,7 @@
             <li>
                 <div class="font-bold">Settings</div>
                 <div>
-                    <form method="post" action="/update_settings" class="">
+                    <form method="post" action="/update_settings" class="space-y-4">
                         <div>
                             <label class="block mb-2 text-sm font-bold text-gray-700">Page Specific Instructions</label>
                             <input type="text" name="page_instructions"
@@ -62,9 +62,14 @@
                         <div>
                             <label class="block mb-2 text-sm font-bold text-gray-700">Application Prompt</label>
                             <textarea name="application_type" placeholder="TODO"
-                                class="textarea textarea-bordered w-full max-w-xs">
-                                {{ app_settings.application_type }}
-                            </textarea>
+                                class="textarea textarea-bordered w-full max-w-xs">{{ app_settings.application_type }}</textarea>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" name="clear_templates" id="clear_templates" 
+                                class="checkbox checkbox-primary" />
+                            <label for="clear_templates" class="text-sm text-gray-600">
+                                Clear previous templates (start fresh)
+                            </label>
                         </div>
                         <input type="hidden" name="path" id="currentUrl" value="">
                         <button class="btn btn-primary" type="submit">Update Settings</button>

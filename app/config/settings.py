@@ -42,6 +42,7 @@ class Settings:
     You can query sqlite and render a Jinja template for the user.
 
     * You should provide a beautiful and engaging user experience to the user.
+    * All pages should have beautiful headers, footers, and navigation.
     * You can create relative links to other pages that make sense for your type of application.
     * All links should be relative!
     * The result of sql commands will be available in a 'results' dictionary with the command's name as the key.

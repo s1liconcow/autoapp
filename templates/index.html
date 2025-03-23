@@ -4,10 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto AI Application</title>
+    <title>Agora AI Application Platform</title>
     <!-- Add Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        .text-shimmer {
+            background: linear-gradient(to right, #00008B 20%, #ADD8E6 40%, #00008B 60%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -122,7 +158,7 @@
                         </div>
                     </div>
                     <div>
-                        <form method="post" action="/" class="">
+                        <form method="post" action="/" class="space-y-6">
                             <div>
                                 <label class="block mb-2 text-sm font-bold text-gray-700">My Application Vision</label>
                                 <textarea
