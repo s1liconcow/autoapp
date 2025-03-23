@@ -2,6 +2,7 @@ from typing import Optional
 import requests
 import anthropic
 from google import genai
+from app import db
 from google.genai import types
 from app.config.settings import settings
 from app.utils.logger import logger
@@ -32,7 +33,6 @@ class LLMClient:
                                 "properties": {
                                     "name": {"type": "string"},
                                     "query": {"type": "string"},
-                                    "redirect": {"type": "string", "description": "Optional URL to redirect to"}
                                 }
                             }
                         }
@@ -103,16 +103,18 @@ class LLMClient:
 
         previous_template = ""
         if app_settings.get('generated_template'):
+            template_source = "for this page" if not app_settings.get('using_referring_page') else "for the referring page"
             previous_template = f"""
-            Previously generated template for this page:
+            Previously generated template (from {template_source}):
             ```html
             {app_settings['generated_template']}
             ```
-            Please maintain consistency with this template structure while making necessary updates for the current request.
+            Please maintain consistency with this template structure while making necessary updates for the current request. 
             """
 
         system_prompt = f"""
         You are a modern world-class full featured web application server.
+
 
         Application Description: 
         {app_settings['application_type']}
@@ -125,6 +127,9 @@ class LLMClient:
         {per_page_settings}
 
         {previous_template}
+
+
+        The application is mounted at /{app_settings['guid']}.  All links should include the guid and be relative to this path.
         """
 
         return system_prompt

@@ -23,7 +23,8 @@ class Settings:
     {application_type} 
 
     Generate sample data for the app using SQLite.
-    First suggest a database schema and generate insert at least 5 rows of sample data into each table.
+    First suggest a database schema and generate insert sample data into each table.  Use enough sample data to make a convincing application.
+    The user table should contain the default user_id "user1" with username "default_user", and email "default@example.com"
      
     Example response format for SQLite:
     {{
@@ -39,17 +40,21 @@ class Settings:
     INIT_PROMPT_TEMPLATE = SQL_PROMPT_TEMPLATE
 
     SQL_RESPONSE_PROMPT: str = """
-    You can query sqlite and render a Jinja template for the user.
+    You can query sqlite and render a Jinja template for the user as well as include javascript for rich interaction.
 
     * You should provide a beautiful and engaging user experience to the user.
-    * All pages should have beautiful headers, footers, and navigation.
+    * Add beautiful headers and footers if appropriate for the described app.
+    * All app pages should have navigation to other relevant pages.
     * You can create relative links to other pages that make sense for your type of application.
-    * All links should be relative!
     * The result of sql commands will be available in a 'results' dictionary with the command's name as the key.
         For example "results['query_active_users']" returns a list of tuples (rows).
-    * Tailwind CSS and DaisyUI are already included and available, you don't need to load them again.
+    * The Jinja template only has access to the results dictionary, all SQL queries must be completed ahead of time.
+    * Tailwind CSS is already included and available.
+    * DaisyUI is also included and available.
+    * HTMX is also included, to provide more dynamic interactions.  Use a progress indicator to show loading when making htmx requests.
     * the Jinja template represents the HTML <body> so it should include the header and footer of the application.
     * You are not a toy example.  You should be the best application of this kind on the internet.
+    * the current user_id is "user1", username 'default_user' with email 'default@example.com'
 
     Example JSON response:
     {

@@ -7,7 +7,9 @@
     <title>Agora AI Generated Application</title>
     <!-- Add Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
 <body class="drawer">
@@ -24,6 +26,7 @@
                 </label>
             </div>
         </div>
+
         <div class="p-4">
             {{body|safe}}
         </div>

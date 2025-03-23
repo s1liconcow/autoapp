@@ -50,15 +50,26 @@ class SettingsDBClient:
         conn.commit()
         self._close()
 
-    def get(self, guid: str, page_path: str) -> dict[str, str] | None:
+    def get(self, guid: str, page_path: str, referring_page: str | None = None) -> dict[str, str] | None:
         conn = self._connect()
         cursor = conn.cursor()
         cursor.execute(f"SELECT application_type, prompt_template, guid FROM {SETTINGS_TABLE_NAME} WHERE guid = ? LIMIT 1", (guid,))
         settings_row = cursor.fetchone()
         cursor.execute(f"SELECT page_instructions FROM {PAGE_INSTRUCTIONS_TABLE_NAME} WHERE page_path = ? AND guid = ? LIMIT 1", (page_path, guid))
         page_instructions_row = cursor.fetchone()
+        
+        # First try to get template for current page
         cursor.execute(f"SELECT template FROM {GENERATED_TEMPLATES_TABLE_NAME} WHERE guid = ? AND page_path = ? ORDER BY created_at DESC LIMIT 1", (guid, page_path))
         template_row = cursor.fetchone()
+        using_referring_page = False
+        
+        # If no template found and referring page is provided, try to get template from referring page
+        if not template_row and referring_page:
+            cursor.execute(f"SELECT template FROM {GENERATED_TEMPLATES_TABLE_NAME} WHERE guid = ? AND page_path = ? ORDER BY created_at DESC LIMIT 1", (guid, referring_page))
+            template_row = cursor.fetchone()
+            using_referring_page = True
+            
+
         if not page_instructions_row:
             page_instructions_row = [""]
         if not template_row:
@@ -70,7 +81,9 @@ class SettingsDBClient:
             "application_type": settings_row[0], 
             "prompt_template": settings_row[1], 
             "page_instructions": page_instructions_row[0],
-            "generated_template": template_row[0]
+            "generated_template": template_row[0],
+            "guid": guid,
+            "using_referring_page": using_referring_page    
         }
 
     def update(self, guid: str, application_type: str, prompt_template: str, page_instructions: str, page_path: str, generated_template: str = None):

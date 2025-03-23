@@ -54,8 +54,25 @@ async def catch_all(request: Request, path: str):
     guid = parts[0]
     path = "/" + "/".join(parts[1:]) if len(parts) > 1 else "/"
     
+    # Get the referring page from request headers
+    referer = request.headers.get("referer")
+    referring_page = None
+    if referer:
+        # Extract the path from the full URL
+        try:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(referer)
+            ref_path = parsed_url.path
+            # Remove the guid prefix to get just the page path
+            if ref_path and guid in ref_path:
+                ref_parts = ref_path.split('/')
+                if len(ref_parts) > 1 and ref_parts[1] == guid:
+                    referring_page = "/" + "/".join(ref_parts[2:]) if len(ref_parts) > 2 else "/"
+        except Exception as e:
+            logger.warning(f"Error parsing referer: {e}")
+    
     # Get settings for this application
-    settings_data = settings_db_client.get(guid, path)
+    settings_data = settings_db_client.get(guid, path, referring_page)
     if not settings_data:
         raise HTTPException(status_code=404, detail="Application not found")
 
@@ -75,7 +92,7 @@ async def catch_all(request: Request, path: str):
     # Prepare message content
     method = request.method
     message_content = f"{method} {path}"
-    if method != "GET":
+    if method == "POST":
         try:
             body = await request.body()
             body_str = body.decode('utf-8')
@@ -83,13 +100,6 @@ async def catch_all(request: Request, path: str):
                 message_content += f"\n{body_str}"
         except Exception as e:
             logger.warning(f"Could not read request body: {e}")
-    
-    # For POST requests, add form data to message
-    if method == "POST":
-        form_data = await request.form()
-        user_input = form_data.get("user_input", "")
-        if user_input:
-            message_content = user_input  # Override message content with user input for POST
 
     try:
         # Get data model and format prompt
@@ -155,24 +165,32 @@ async def catch_all(request: Request, path: str):
                 # Render template
                 llm_template = templates.env.from_string(template)
                 rendered_html = llm_template.render(**context)
-
-                # Process links and forms to maintain GUID in paths
-                soup = BeautifulSoup(rendered_html, 'html.parser')
-                for tag in soup.find_all(['a', 'form']):
-                    attr = 'href' if tag.name == 'a' else 'action'
-                    if attr in tag.attrs:
-                        url = tag[attr]
-                        if not url.startswith(('http://', 'https://', 'mailto:')):
-                            tag[attr] = '/' + guid + '/' + url.lstrip('/')
-
+                
+                # Check if it's an HTMX request
+                is_htmx = request.headers.get("HX-Request") == "true"
+                
+                if is_htmx:
+                    return HTMLResponse(rendered_html)
+                
                 return templates.TemplateResponse(
                     "app.html",
                     {
                         "request": request,
-                        "body": str(soup),
+                        "body": rendered_html,
                         "app_settings": settings_data
                     }
                 )
+
+        except Exception as template_error:
+            logger.error("Template rendering error: %s", str(template_error))
+            return f"""
+            <div class='error'>
+                <p><strong>Template Error:</strong> {str(template_error)}</p>
+                <hr>
+                <p><strong>LLM Response:</strong></p>
+                <pre>{response_text}</pre>
+            </div>
+            """
 
         except json.JSONDecodeError:
             error_msg = "Invalid JSON response from LLM"
