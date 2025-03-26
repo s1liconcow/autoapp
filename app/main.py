@@ -8,7 +8,7 @@ from app.config.settings import settings
 from app.db.settings_db_client import settings_db_client
 from app.api.routes import router
 from app.utils.logger import logger
-from app.llm.database_init import DatabaseInitializer
+from app.llm.app_init import AppInitializer
 
 
 

@@ -6,13 +6,17 @@ import uuid
 from app.config.settings import settings
 from app.db.settings_db_client import settings_db_client
 from app.db import sql_client
-from app.llm import database_init
+from app.llm import app_init
 from app.llm.client import llm_client
 from app.utils.logger import logger
 from bs4 import BeautifulSoup
+import asyncio
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+initialization_locks = {}
+initialized_guids = set()
 
 @router.api_route("/update_settings", methods=["POST"])
 async def update_settings(
@@ -81,10 +85,49 @@ async def catch_all(request: Request, path: str):
     
     # Handle database initialization if needed
     if not db_client.is_initialized():
-        flash_message = "Database is initializing, this may take a moment."
-        import asyncio
-        app_type = settings_data['application_type']
-        asyncio.create_task(database_init.DatabaseInitializer(db_client, app_type).initialize_database())
+        flash_message = "App is initializing, this may take a moment..."
+        
+        async def initialize_background():
+            if guid in initialized_guids:
+                return
+            
+            logger.info("Starting background design job for app: {}".format(guid))
+                
+            # Get or create a lock for this specific guid
+            if guid not in initialization_locks:
+                initialization_locks[guid] = asyncio.Lock()
+            
+            async with initialization_locks[guid]:
+                # Double-check in case another task initialized while we were waiting
+                if guid in initialized_guids:
+                    return
+                    
+                app_type = settings_data['application_type']
+                
+                # Log design prompt request
+                logger.info("\n=== Design Prompt Request ===\n%s\n==================", 
+                          settings.DESIGN_PROMPT.format(app_type))
+                punched_up_design = await llm_client.get_design_response(settings.DESIGN_PROMPT.format(app_type))
+                logger.info("\n=== Design Prompt Response ===\n%s\n==================", 
+                          punched_up_design)
+
+                # Log template prompt request
+                logger.info("\n=== Template Prompt Request ===\n%s\n==================", 
+                          settings.DESIGN_TEMPLATE_PROMPT.format(punched_up_design))
+                punched_up_template = await llm_client.get_design_response(settings.DESIGN_TEMPLATE_PROMPT.format(punched_up_design))
+                logger.info("\n=== Template Prompt Response ===\n%s\n==================", 
+                          punched_up_template)
+                await app_init.AppInitializer(db_client, app_type).initialize_database()
+                settings_db_client.update(guid, punched_up_design, settings.RESPONSE_PROMPT, "", "/", punched_up_template)
+
+                
+                initialized_guids.add(guid)
+                initialization_locks.pop(guid, None)  # Clean up the lock
+            
+        # Create background task
+        asyncio.create_task(initialize_background())
+        
+        # Return response immediately
         return templates.TemplateResponse(
             "app.html", {"request": request, "body": "", "app_settings": settings_data, "flash_message": flash_message}
         )
@@ -113,7 +156,6 @@ async def catch_all(request: Request, path: str):
             "\n=== Catch-all LLM Request ===\n%s\n%s\n==================", system_prompt, message_content
         )
 
-        # Get LLM response
         response_text = await llm_client.get_response(message_content, system_prompt)
 
         # Clean up response text
@@ -159,7 +201,6 @@ async def catch_all(request: Request, path: str):
                     "results": db_results,
                     "db": db_client,
                     "path": path,
-                    "guid": guid
                 }
 
                 # Render template
@@ -172,12 +213,19 @@ async def catch_all(request: Request, path: str):
                 if is_htmx:
                     return HTMLResponse(rendered_html)
                 
+                css, js = ("","")
+                if "CSS" in llm_response:
+                    css= llm_response['CSS']
+                if "Javascript" in llm_response:
+                    js = llm_response['Javascript']
                 return templates.TemplateResponse(
                     "app.html",
                     {
                         "request": request,
                         "body": rendered_html,
-                        "app_settings": settings_data
+                        "app_settings": settings_data,
+                        "css": css,
+                        "js": js
                     }
                 )
 

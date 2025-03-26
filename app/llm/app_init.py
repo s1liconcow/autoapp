@@ -12,7 +12,7 @@ from app.db import DatabaseClient
 logger = logging.getLogger(__name__)
 
 
-class DatabaseInitializer:
+class AppInitializer:
     def __init__(
         self,
         db_client: DatabaseClient,
@@ -22,7 +22,7 @@ class DatabaseInitializer:
         self.app_type = app_type
 
     async def initialize_database(self):
-        """Initialize Redis with sample data from LLM"""
+        """Initialize sqlite with sample data from LLM"""
         if self.db_client.is_initialized():
             logger.info("Database already initialized, skipping initialization")
             return

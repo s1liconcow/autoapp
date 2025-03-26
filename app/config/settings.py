@@ -11,6 +11,7 @@ class Settings:
         "APPLICATION_DESCRIPTION", f"A world-class enterprise-grade {APPLICATION_TYPE}"
     )
     CLAUDE_MODEL: str = "claude-3-7-sonnet-20250219"
+    CLAUDE_MODEL_DESIGN: str = "claude-3-7-sonnet-20250219"
 
     # Data Model
     DATA_MODEL_KEY: str = "data_model"
@@ -40,7 +41,7 @@ class Settings:
     INIT_PROMPT_TEMPLATE = SQL_PROMPT_TEMPLATE
 
     SQL_RESPONSE_PROMPT: str = """
-    You can query sqlite and render a Jinja template for the user as well as include javascript for rich interaction.
+    You can query sqlite and render a Jinja template for the user as well as include css or javascript for rich interaction.
 
     * You should provide a beautiful and engaging user experience to the user.
     * Add beautiful headers and footers if appropriate for the described app.
@@ -49,9 +50,11 @@ class Settings:
     * The result of sql commands will be available in a 'results' dictionary with the command's name as the key.
         For example "results['query_active_users']" returns a list of tuples (rows).
     * The Jinja template only has access to the results dictionary, all SQL queries must be completed ahead of time.
-    * Tailwind CSS is already included and available.
-    * DaisyUI is also included and available.
-    * HTMX is also included, to provide more dynamic interactions.  Use a progress indicator to show loading when making htmx requests.
+    * Tailwind CSS is already included and available, you don't need to load it.
+    * HTMX is also included,  you don't need to load it.  Use a progress indicator to show loading when making htmx requests.
+    * Font Awesome is also included and available.
+    * D3js is also available.
+    * Do not link to images - use only CSS, SVG, or JS
     * the Jinja template represents the HTML <body> so it should include the header and footer of the application.
     * You are not a toy example.  You should be the best application of this kind on the internet.
     * the current user_id is "user1", username 'default_user' with email 'default@example.com'
@@ -62,6 +65,8 @@ class Settings:
             {"name": "query_new_users", "query": "SELECT user_id, username FROM users WHERE status = 'new' LIMIT 10"},
             {"name": "query_all_users", "query": "SELECT user_id, username FROM users LIMIT 20"},
         ],
+        "CSS": "<your css here>",
+        "Javascript": "<your JS here>",
         "template": "
     <h1>New Users</h1>
     <ul>
@@ -89,11 +94,29 @@ class Settings:
 
     # LLM Settings
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()
+    LLM_DESIGN_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini").lower()
+    DESIGN_PROMPT: str = """
+    Describe a sleek, beautiful, and engaging design for:
+    {}
+    The app design should be clear, concise, delightful, descriptive and inspired by Apple design philosophy.
+    """
+    DESIGN_TEMPLATE_PROMPT: str = """
+    Given the following design:
+    {}
+
+    Generate HTML, CSS, JS, or SVG only.  All in one page, do not link to images.
+    * Tailwind CSS is already included and available, you don't need to load it.
+    * HTMX is also included,  you don't need to load it.  Use a progress indicator to show loading when making htmx requests.
+    * Font Awesome is also included and available.
+    * D3js is also available for charts or graphs.
+    """
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
     CLAUDE_API_KEY: Optional[str] = os.getenv("CLAUDE_API_KEY")
     GEMINI_MODEL_PRO: str = "gemini-2.0-pro-exp-02-05"
     GEMINI_MODEL_FLASH: str = "gemini-2.0-flash"
-    GEMINI_MODEL: str = GEMINI_MODEL_FLASH
+    GEMINI_MODEL_THINKING: str = "gemini-2.0-flash-thinking-exp-01-21"
+    GEMINI_MODEL: str = GEMINI_MODEL_FLASH   # Using most capable model
+    GEMINI_DESIGN_MODEL: str = GEMINI_MODEL_THINKING
     OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://192.168.56.1:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma3:12b")
 

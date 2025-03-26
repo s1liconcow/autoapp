@@ -10,9 +10,22 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"
+        integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        {
+                {
+                css|safe
+            }
+        }
+    </style>
 </head>
 
-<body class="drawer">
+<body class="drawer" data-theme="light">
     <input id="my-drawer" type="checkbox" class="drawer-toggle" />
     <div class="drawer-content">
         <div class="navbar bg-base-100">
@@ -27,7 +40,7 @@
             </div>
         </div>
 
-        <div class="p-4">
+        <div class="p-4" hx-target="this" hx-select=".p-4">
             {{body|safe}}
         </div>
         {% if flash_message %}
@@ -38,16 +51,21 @@
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>{{ flash_message }}</span>
+            {% if flash_message == "Database is initializing, this may take a moment." %}
+            <div class="w-full max-w-xs ml-4">
+                <progress class="progress progress-info w-full"></progress>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
     </div>
     <div class="drawer-side">
         <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <script>
-            if ("{{ flash_message }}" === "Database is initializing, this may take a moment.") {
+            if ("{{ flash_message }}" === "App is initializing, this may take a moment.") {
                 setTimeout(function () {
                     window.location.reload();
-                }, 1000); 
+                }, 1000);
             }
         </script>
         <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
@@ -68,7 +86,7 @@
                                 class="textarea textarea-bordered w-full max-w-xs">{{ app_settings.application_type }}</textarea>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="checkbox" name="clear_templates" id="clear_templates" 
+                            <input type="checkbox" name="clear_templates" id="clear_templates"
                                 class="checkbox checkbox-primary" />
                             <label for="clear_templates" class="text-sm text-gray-600">
                                 Clear previous templates (start fresh)
@@ -85,6 +103,9 @@
 
 <script>
     document.getElementById('currentUrl').value = window.location.pathname;
+</script>
+<script>
+    { { js | safe } }
 </script>
 
 </html>

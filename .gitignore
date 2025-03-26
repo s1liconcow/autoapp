@@ -6,3 +6,4 @@ test.json
 *.db
 .vscode
 .aider*
+examples
